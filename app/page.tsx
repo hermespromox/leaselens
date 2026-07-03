@@ -137,7 +137,7 @@ export default function Home() {
   return (
     <main>
       <nav className="nav">
-        <a className="brand" href="#top"><span className="material-symbols-outlined logo-icon">alt_route</span><span>LeaseLens</span></a>
+        <a className="brand" href="#top" aria-label="LeaseLens"><span aria-hidden="true" className="material-symbols-outlined logo-icon">alt_route</span><span>LeaseLens</span></a>
         <div>
           <a href="#product">Product</a>
           <a href="#pricing">Pricing</a>

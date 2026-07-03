@@ -26,6 +26,7 @@ const HOST = 'maps-data.p.rapidapi.com';
 const BASE = `https://${HOST}`;
 const REVIEW_SAMPLE_PLACE_LIMIT = 10;
 const REVIEWS_PER_PLACE_LIMIT = 20;
+const REVIEW_WINDOW_DAYS = 7;
 
 function rapidKey() {
   const key = process.env.RAPIDAPI_KEY || process.env.RAPID_MAPS_KEY;
@@ -198,7 +199,7 @@ export async function POST(req: NextRequest) {
     const category = String(body.category || '').trim() || 'restaurant';
     const country = String(body.country || 'fr').toLowerCase().trim();
     const radiusMeters = Math.min(Math.max(Number(body.radiusMeters || 800), 300), 3000);
-    const reviewWindowDays = Math.min(Math.max(Number(body.reviewWindowDays || 90), 7), 365);
+    const reviewWindowDays = REVIEW_WINDOW_DAYS;
     const maxResults = Math.min(Math.max(Number(body.maxResults || 100), 20), 500);
     if (!placeA || !placeB) return NextResponse.json({ error: 'Place A and Place B are required.' }, { status: 400 });
 

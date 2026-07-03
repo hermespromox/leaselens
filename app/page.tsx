@@ -55,12 +55,11 @@ function SideCard({ side }: { side: Side }) {
         <Metric label="POIs found" value={side.metrics.poiCount ?? 0} />
         <Metric label="Avg rating" value={(side.metrics.avgRating ?? 0).toFixed(2)} />
         <Metric label="Total reviews" value={Math.round(side.metrics.totalReviews ?? 0).toLocaleString()} />
-        <Metric label="Recent reviews in sample" value={side.metrics.reviewsInWindow ?? 0} />
         <Metric label="Review velocity" value={(side.metrics.reviewVelocity ?? 0).toFixed(2)} suffix="/day" />
         <Metric label="Median reviews" value={Math.round(side.metrics.medianReviews ?? 0).toLocaleString()} />
         <Metric label="Activity index" value={(side.metrics.activityIndex ?? 0).toFixed(1)} suffix="%" />
       </div>
-      <p className="notice">Recent reviews are counted only inside the sampled newest reviews. Activity index is the share of that review sample that falls inside the selected recent window.</p>
+      <p className="notice">Review velocity and Activity index use a fixed 7-day recent window. Activity index is the share of the newest review sample that falls inside those 7 days.</p>
       <h3 className="section-title">Top nearby places</h3>
       {side.topPlaces.slice(0, 5).map((p) => (
         <div className="place" key={`${side.label}-${p.name}-${p.full_address}`}>
@@ -99,9 +98,7 @@ export default function Home() {
     placeB: '57 rue Montorgueil, 75002 Paris',
     category: 'restaurant',
     radiusMeters: '800',
-    reviewWindowDays: '7',
     maxResults: '500',
-    country: 'fr',
   });
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
@@ -119,7 +116,7 @@ export default function Home() {
         body: JSON.stringify({
           ...form,
           radiusMeters: Number(form.radiusMeters),
-          reviewWindowDays: Number(form.reviewWindowDays),
+          reviewWindowDays: 7,
           maxResults: Number(form.maxResults),
         }),
       });
@@ -168,29 +165,15 @@ export default function Home() {
             <label>Business/category
               <input value={form.category} onChange={e => setForm({...form, category: e.target.value})} placeholder="restaurant, coffee shop, dentist, gym..." required />
             </label>
-            <div className="row">
-              <label>Radius
-                <select value={form.radiusMeters} onChange={e => setForm({...form, radiusMeters: e.target.value})}>
-                  <option value="300">300m</option>
-                  <option value="500">500m</option>
-                  <option value="800">800m</option>
-                  <option value="1200">1.2km</option>
-                  <option value="2000">2km</option>
-                  <option value="3000">3km</option>
-                </select>
-              </label>
-              <label>Recent window
-                <select value={form.reviewWindowDays} onChange={e => setForm({...form, reviewWindowDays: e.target.value})}>
-                  <option value="7">7 days</option>
-                  <option value="30">30 days</option>
-                  <option value="90">90 days</option>
-                  <option value="180">180 days</option>
-                  <option value="365">365 days</option>
-                </select>
-              </label>
-            </div>
-            <label>Country
-              <input value={form.country} onChange={e => setForm({...form, country: e.target.value.toLowerCase()})} placeholder="fr" />
+            <label>Radius
+              <select value={form.radiusMeters} onChange={e => setForm({...form, radiusMeters: e.target.value})}>
+                <option value="300">300m</option>
+                <option value="500">500m</option>
+                <option value="800">800m</option>
+                <option value="1200">1.2km</option>
+                <option value="2000">2km</option>
+                <option value="3000">3km</option>
+              </select>
             </label>
             <button className="primary" disabled={loading}>{loading ? 'Scanning Maps data…' : 'Compare locations'}</button>
             <p className="notice">Example Paris restaurant comparison is pre-filled. Scores are decision support, not official footfall measurement. Review sampling stays limited for speed.</p>

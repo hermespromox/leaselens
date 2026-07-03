@@ -109,7 +109,7 @@ async function getReviews(place: NearbyPlace, country: string, windowDays: numbe
       business_id: place.business_id,
       country,
       lang: 'en',
-      limit: 10,
+      limit: 20,
       sort: 'Newest',
     });
     const reviews: Review[] = data?.data?.reviews || [];
@@ -134,7 +134,7 @@ async function analyze(label: 'A' | 'B', input: string, category: string, radius
   const places: NearbyPlace[] = (nearby?.data || []).filter((p: NearbyPlace) => p?.business_id);
   const reviewSamplePlaces = [...places]
     .sort((a, b) => (b.review_count || 0) - (a.review_count || 0))
-    .slice(0, 8);
+    .slice(0, 10);
 
   const reviewResults = await Promise.all(reviewSamplePlaces.map((p) => getReviews(p, country, reviewWindowDays)));
   const recentComments = reviewResults.flatMap((res, index) => {
@@ -178,8 +178,8 @@ async function analyze(label: 'A' | 'B', input: string, category: string, radius
     metrics,
     topPlaces: [...places]
       .sort((a, b) => ((b.rating || 0) * Math.log((b.review_count || 0) + 2)) - ((a.rating || 0) * Math.log((a.review_count || 0) + 2)))
-      .slice(0, 8),
-    recentComments: recentComments.slice(0, 10),
+      .slice(0, 10),
+    recentComments: recentComments.slice(0, 20),
   };
 }
 

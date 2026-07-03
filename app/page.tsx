@@ -62,7 +62,7 @@ function SideCard({ side }: { side: Side }) {
         <Metric label="Activity index" value={(side.metrics.activityIndex ?? 0).toFixed(1)} />
       </div>
       <h3 className="section-title">Top nearby places</h3>
-      {side.topPlaces.slice(0, 8).map((p) => (
+      {side.topPlaces.slice(0, 10).map((p) => (
         <div className="place" key={`${side.label}-${p.name}-${p.full_address}`}>
           <strong>{p.place_link ? <a href={p.place_link} target="_blank">{p.name}</a> : p.name}</strong>
           <small>{p.rating ?? '—'} ★ · {(p.review_count ?? 0).toLocaleString()} reviews</small>
@@ -182,6 +182,7 @@ export default function Home() {
               </label>
               <label>Recent window
                 <select value={form.reviewWindowDays} onChange={e => setForm({...form, reviewWindowDays: e.target.value})}>
+                  <option value="7">7 days</option>
                   <option value="30">30 days</option>
                   <option value="90">90 days</option>
                   <option value="180">180 days</option>

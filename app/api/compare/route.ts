@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 30;
+export const maxDuration = 60;
 
 type Coordinates = { lat: number; lng: number };
 type NearbyPlace = {
@@ -135,7 +135,7 @@ async function analyze(label: 'A' | 'B', input: string, category: string, radius
   const places: NearbyPlace[] = (nearby?.data || []).filter((p: NearbyPlace) => p?.business_id);
   const reviewSamplePlaces = [...places]
     .sort((a, b) => (b.review_count || 0) - (a.review_count || 0))
-    .slice(0, 8);
+    .slice(0, 4);
 
   const reviewResults = await Promise.all(reviewSamplePlaces.map((p) => getReviews(p, country, reviewWindowDays)));
   const recentComments = reviewResults.flatMap((res, index) => {

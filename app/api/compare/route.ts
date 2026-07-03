@@ -120,13 +120,13 @@ async function getReviews(place: NearbyPlace, country: string, windowDays: numbe
   }
 }
 
-async function analyze(label: 'A' | 'B', input: string, category: string, radiusMeters: number, reviewWindowDays: number, country: string) {
+async function analyze(label: 'A' | 'B', input: string, category: string, radiusMeters: number, reviewWindowDays: number, country: string, maxResults: number) {
   const coordinates = await geocode(input, country);
   const nearby = await rapid('/nearby.php', {
     query: category,
     lat: coordinates.lat,
     lng: coordinates.lng,
-    limit: 20,
+    limit: maxResults,
     country,
     lang: 'en',
     offset: 0,
@@ -197,11 +197,12 @@ export async function POST(req: NextRequest) {
     const country = String(body.country || 'fr').toLowerCase().trim();
     const radiusMeters = Math.min(Math.max(Number(body.radiusMeters || 800), 300), 3000);
     const reviewWindowDays = Math.min(Math.max(Number(body.reviewWindowDays || 90), 7), 365);
+    const maxResults = Math.min(Math.max(Number(body.maxResults || 100), 20), 500);
     if (!placeA || !placeB) return NextResponse.json({ error: 'Place A and Place B are required.' }, { status: 400 });
 
     const [A, B] = await Promise.all([
-      analyze('A', placeA, category, radiusMeters, reviewWindowDays, country),
-      analyze('B', placeB, category, radiusMeters, reviewWindowDays, country),
+      analyze('A', placeA, category, radiusMeters, reviewWindowDays, country, maxResults),
+      analyze('B', placeB, category, radiusMeters, reviewWindowDays, country, maxResults),
     ]);
 
     const winner = A.score === B.score ? 'Tie' : A.score > B.score ? 'A' : 'B';
@@ -216,6 +217,7 @@ export async function POST(req: NextRequest) {
       category,
       radiusMeters,
       reviewWindowDays,
+      maxResults,
       sides: { A, B },
     });
   } catch (err) {

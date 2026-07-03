@@ -24,6 +24,8 @@ type Review = {
 
 const HOST = 'maps-data.p.rapidapi.com';
 const BASE = `https://${HOST}`;
+const REVIEW_SAMPLE_PLACE_LIMIT = 10;
+const REVIEWS_PER_PLACE_LIMIT = 20;
 
 function rapidKey() {
   const key = process.env.RAPIDAPI_KEY || process.env.RAPID_MAPS_KEY;
@@ -109,7 +111,7 @@ async function getReviews(place: NearbyPlace, country: string, windowDays: numbe
       business_id: place.business_id,
       country,
       lang: 'en',
-      limit: 20,
+      limit: REVIEWS_PER_PLACE_LIMIT,
       sort: 'Newest',
     });
     const reviews: Review[] = data?.data?.reviews || [];
@@ -134,7 +136,7 @@ async function analyze(label: 'A' | 'B', input: string, category: string, radius
   const places: NearbyPlace[] = (nearby?.data || []).filter((p: NearbyPlace) => p?.business_id);
   const reviewSamplePlaces = [...places]
     .sort((a, b) => (b.review_count || 0) - (a.review_count || 0))
-    .slice(0, 10);
+    .slice(0, REVIEW_SAMPLE_PLACE_LIMIT);
 
   const reviewResults = await Promise.all(reviewSamplePlaces.map((p) => getReviews(p, country, reviewWindowDays)));
   const recentComments = reviewResults.flatMap((res, index) => {
@@ -157,6 +159,10 @@ async function analyze(label: 'A' | 'B', input: string, category: string, radius
 
   const reviewVelocity = reviewsInWindow / Math.max(reviewWindowDays, 1);
   const reviewVelocityPerPlace = reviewVelocity / Math.max(reviewSamplePlaces.length, 1);
+  const reviewSampleCapacity = reviewSamplePlaces.length * REVIEWS_PER_PLACE_LIMIT;
+  const activityIndex = reviewSampleCapacity
+    ? (reviewsInWindow / reviewSampleCapacity) * 100
+    : 0;
 
   const metrics = {
     poiCount: places.length,
@@ -165,9 +171,10 @@ async function analyze(label: 'A' | 'B', input: string, category: string, radius
     totalReviews,
     medianReviews: median(reviewCounts),
     reviewsInWindow,
+    reviewSampleCapacity,
     reviewVelocity: Number(reviewVelocity.toFixed(3)),
     reviewVelocityPerPlace: Number(reviewVelocityPerPlace.toFixed(3)),
-    activityIndex: Number(((reviewsInWindow / Math.max(reviewSamplePlaces.length, 1)) * 10).toFixed(2)),
+    activityIndex: Number(activityIndex.toFixed(1)),
   };
 
   return {
@@ -177,8 +184,8 @@ async function analyze(label: 'A' | 'B', input: string, category: string, radius
     score: score(metrics),
     metrics,
     topPlaces: [...places]
-      .sort((a, b) => ((b.rating || 0) * Math.log((b.review_count || 0) + 2)) - ((a.rating || 0) * Math.log((a.review_count || 0) + 2)))
-      .slice(0, 10),
+      .sort((a, b) => (b.review_count || 0) - (a.review_count || 0))
+      .slice(0, 5),
     recentComments: recentComments.slice(0, 20),
   };
 }

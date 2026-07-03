@@ -55,28 +55,27 @@ function SideCard({ side }: { side: Side }) {
         <Metric label="POIs found" value={side.metrics.poiCount ?? 0} />
         <Metric label="Avg rating" value={(side.metrics.avgRating ?? 0).toFixed(2)} />
         <Metric label="Total reviews" value={Math.round(side.metrics.totalReviews ?? 0).toLocaleString()} />
-        <Metric label="Recent sampled" value={side.metrics.reviewsInWindow ?? 0} />
+        <Metric label="Recent reviews in sample" value={side.metrics.reviewsInWindow ?? 0} />
         <Metric label="Review velocity" value={(side.metrics.reviewVelocity ?? 0).toFixed(2)} suffix="/day" />
-        <Metric label="Per-place velocity" value={(side.metrics.reviewVelocityPerPlace ?? 0).toFixed(3)} suffix="/day" />
         <Metric label="Median reviews" value={Math.round(side.metrics.medianReviews ?? 0).toLocaleString()} />
-        <Metric label="Activity index" value={(side.metrics.activityIndex ?? 0).toFixed(1)} />
+        <Metric label="Activity index" value={(side.metrics.activityIndex ?? 0).toFixed(1)} suffix="%" />
       </div>
+      <p className="notice">Recent reviews are counted only inside the sampled newest reviews. Activity index is the share of that review sample that falls inside the selected recent window.</p>
       <h3 className="section-title">Top nearby places</h3>
-      {side.topPlaces.slice(0, 10).map((p) => (
+      {side.topPlaces.slice(0, 5).map((p) => (
         <div className="place" key={`${side.label}-${p.name}-${p.full_address}`}>
           <strong>{p.place_link ? <a href={p.place_link} target="_blank">{p.name}</a> : p.name}</strong>
           <small>{p.rating ?? '—'} ★ · {(p.review_count ?? 0).toLocaleString()} reviews</small>
           <small>{p.full_address}</small>
         </div>
       ))}
-      <h3 className="section-title">Newest comments sampled</h3>
+      <h3 className="section-title">Newest reviews sampled</h3>
       <div className="comments">
         {side.recentComments.length ? side.recentComments.slice(0, 5).map((c, i) => (
           <div className="comment" key={i}>
-            <strong>{c.place}</strong> · {c.rating ?? '—'} ★ · {c.date || 'recent'}<br />
-            {c.text || 'No text review'}
+            <strong>{c.place}</strong> · {c.rating ?? '—'} ★ · {c.date || 'recent'}
           </div>
-        )) : <p className="notice">No comments returned by the provider for sampled places.</p>}
+        )) : <p className="notice">No recent review timestamps returned by the provider for sampled places.</p>}
       </div>
     </div>
   );
@@ -96,11 +95,11 @@ const tiers = [
 
 export default function Home() {
   const [form, setForm] = useState({
-    placeA: 'Vieux-Port, Marseille',
-    placeB: 'La Joliette, Marseille',
-    category: 'coffee shop',
+    placeA: '30 rue Myrha, 75018 Paris',
+    placeB: '57 rue Montorgueil, 75002 Paris',
+    category: 'restaurant',
     radiusMeters: '800',
-    reviewWindowDays: '90',
+    reviewWindowDays: '7',
     maxResults: '500',
     country: 'fr',
   });
@@ -161,13 +160,13 @@ export default function Home() {
         <div id="compare" className="panel form-panel">
           <form className="form" onSubmit={submit}>
             <label>Place A address or lat,lng
-              <input value={form.placeA} onChange={e => setForm({...form, placeA: e.target.value})} placeholder="Vieux-Port, Marseille" required />
+              <input value={form.placeA} onChange={e => setForm({...form, placeA: e.target.value})} placeholder="30 rue Myrha, 75018 Paris" required />
             </label>
             <label>Place B address or lat,lng
-              <input value={form.placeB} onChange={e => setForm({...form, placeB: e.target.value})} placeholder="La Joliette, Marseille" required />
+              <input value={form.placeB} onChange={e => setForm({...form, placeB: e.target.value})} placeholder="57 rue Montorgueil, 75002 Paris" required />
             </label>
             <label>Business/category
-              <input value={form.category} onChange={e => setForm({...form, category: e.target.value})} placeholder="coffee shop, dentist, gym..." required />
+              <input value={form.category} onChange={e => setForm({...form, category: e.target.value})} placeholder="restaurant, coffee shop, dentist, gym..." required />
             </label>
             <div className="row">
               <label>Radius
@@ -194,7 +193,7 @@ export default function Home() {
               <input value={form.country} onChange={e => setForm({...form, country: e.target.value.toLowerCase()})} placeholder="fr" />
             </label>
             <button className="primary" disabled={loading}>{loading ? 'Scanning Maps data…' : 'Compare locations'}</button>
-            <p className="notice">Scores are decision support, not official footfall measurement. Review sampling stays limited for speed.</p>
+            <p className="notice">Example Paris restaurant comparison is pre-filled. Scores are decision support, not official footfall measurement. Review sampling stays limited for speed.</p>
           </form>
         </div>
       </section>

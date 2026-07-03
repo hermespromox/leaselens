@@ -158,6 +158,9 @@ async function analyze(label: 'A' | 'B', input: string, category: string, radius
   const totalReviews = reviewCounts.reduce((a, b) => a + b, 0);
   const avgRating = ratings.length ? ratings.reduce((a, b) => a + b, 0) / ratings.length : 0;
 
+  const reviewVelocity = reviewsInWindow / Math.max(reviewWindowDays, 1);
+  const reviewVelocityPerPlace = reviewVelocity / Math.max(reviewSamplePlaces.length, 1);
+
   const metrics = {
     poiCount: places.length,
     avgRating: Number(avgRating.toFixed(3)),
@@ -165,6 +168,8 @@ async function analyze(label: 'A' | 'B', input: string, category: string, radius
     totalReviews,
     medianReviews: median(reviewCounts),
     reviewsInWindow,
+    reviewVelocity: Number(reviewVelocity.toFixed(3)),
+    reviewVelocityPerPlace: Number(reviewVelocityPerPlace.toFixed(3)),
     weakCompetitors,
     noWebsite,
     activityIndex: Number(((reviewsInWindow / Math.max(reviewSamplePlaces.length, 1)) * 10).toFixed(2)),
@@ -202,7 +207,7 @@ export async function POST(req: NextRequest) {
     const winner = A.score === B.score ? 'Tie' : A.score > B.score ? 'A' : 'B';
     const better = winner === 'A' ? A : winner === 'B' ? B : null;
     const summary = better
-      ? `Place ${winner} looks stronger for “${category}”: ${better.metrics.poiCount} nearby POIs, ${better.metrics.totalReviews.toLocaleString()} total reviews, ${better.metrics.reviewsInWindow} newest sampled reviews inside ${reviewWindowDays} days, and ${better.metrics.weakCompetitors} weak competitors.`
+      ? `Place ${winner} looks stronger for “${category}”: ${better.metrics.poiCount} nearby POIs, ${better.metrics.totalReviews.toLocaleString()} total reviews, ${better.metrics.reviewsInWindow} newest sampled reviews inside ${reviewWindowDays} days, about ${better.metrics.reviewVelocity.toFixed(2)} sampled reviews/day, and ${better.metrics.weakCompetitors} weak competitors.`
       : `The two locations are close. Compare the mix of weak competitors, review velocity and category density before deciding.`;
 
     return NextResponse.json({

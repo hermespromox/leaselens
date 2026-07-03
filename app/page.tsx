@@ -56,6 +56,8 @@ function SideCard({ side }: { side: Side }) {
         <Metric label="Total reviews" value={Math.round(side.metrics.totalReviews ?? 0).toLocaleString()} />
         <Metric label="Recent sampled" value={side.metrics.reviewsInWindow ?? 0} />
         <Metric label="Weak competitors" value={side.metrics.weakCompetitors ?? 0} />
+        <Metric label="Review velocity" value={(side.metrics.reviewVelocity ?? 0).toFixed(2)} suffix="/day" />
+        <Metric label="Per-place velocity" value={(side.metrics.reviewVelocityPerPlace ?? 0).toFixed(3)} suffix="/day" />
         <Metric label="No website" value={side.metrics.noWebsite ?? 0} />
         <Metric label="Median reviews" value={Math.round(side.metrics.medianReviews ?? 0).toLocaleString()} />
         <Metric label="Activity index" value={(side.metrics.activityIndex ?? 0).toFixed(1)} />

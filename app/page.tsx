@@ -92,12 +92,27 @@ const tiers = [
   ['Studio', 'Custom', 'For teams and APIs', ['Team workspace', 'Bulk address lists', 'White-label reports', 'Custom data providers']],
 ];
 
+const DEFAULT_RADIUS_METERS = 800;
+const businessCategories = [
+  { label: 'Restaurant', value: 'restaurant' },
+  { label: 'Coffee shop', value: 'coffee shop' },
+  { label: 'Bakery', value: 'bakery' },
+  { label: 'Bar', value: 'bar' },
+  { label: 'Fast food', value: 'fast food restaurant' },
+  { label: 'Grocery / supermarket', value: 'supermarket' },
+  { label: 'Pharmacy', value: 'pharmacy' },
+  { label: 'Beauty salon', value: 'beauty salon' },
+  { label: 'Gym / fitness', value: 'gym' },
+  { label: 'Dentist', value: 'dentist' },
+  { label: 'Hotel', value: 'hotel' },
+  { label: 'Coworking', value: 'coworking space' },
+];
+
 export default function Home() {
   const [form, setForm] = useState({
     placeA: '30 rue Myrha, 75018 Paris',
     placeB: '57 rue Montorgueil, 75002 Paris',
     category: 'restaurant',
-    radiusMeters: '800',
     maxResults: '500',
   });
   const [loading, setLoading] = useState(false);
@@ -115,7 +130,7 @@ export default function Home() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...form,
-          radiusMeters: Number(form.radiusMeters),
+          radiusMeters: DEFAULT_RADIUS_METERS,
           reviewWindowDays: 7,
           maxResults: Number(form.maxResults),
         }),
@@ -163,18 +178,13 @@ export default function Home() {
               <input value={form.placeB} onChange={e => setForm({...form, placeB: e.target.value})} placeholder="57 rue Montorgueil, 75002 Paris" required />
             </label>
             <label>Business/category
-              <input value={form.category} onChange={e => setForm({...form, category: e.target.value})} placeholder="restaurant, coffee shop, dentist, gym..." required />
-            </label>
-            <label>Radius
-              <select value={form.radiusMeters} onChange={e => setForm({...form, radiusMeters: e.target.value})}>
-                <option value="300">300m</option>
-                <option value="500">500m</option>
-                <option value="800">800m</option>
-                <option value="1200">1.2km</option>
-                <option value="2000">2km</option>
-                <option value="3000">3km</option>
+              <select value={form.category} onChange={e => setForm({...form, category: e.target.value})} required>
+                {businessCategories.map(category => (
+                  <option key={category.value} value={category.value}>{category.label}</option>
+                ))}
               </select>
             </label>
+            <p className="notice">Radius is fixed at {DEFAULT_RADIUS_METERS}m for consistent comparisons.</p>
             <button className="primary" disabled={loading}>{loading ? 'Scanning Maps data…' : 'Compare locations'}</button>
             <p className="notice">Example Paris restaurant comparison is pre-filled. Scores are decision support, not official footfall measurement. Review sampling stays limited for speed.</p>
           </form>

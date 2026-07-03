@@ -52,7 +52,7 @@ function SideCard({ side }: { side: Side }) {
       </div>
       <p className="notice">{side.coordinates.lat.toFixed(5)}, {side.coordinates.lng.toFixed(5)}</p>
       <div className="metrics">
-        <Metric label="POIs found" value={side.metrics.poiCount ?? 0} />
+        <Metric label="Nearby places" value={side.metrics.poiCount ?? 0} />
         <Metric label="Avg rating" value={(side.metrics.avgRating ?? 0).toFixed(2)} />
         <Metric label="Total reviews" value={Math.round(side.metrics.totalReviews ?? 0).toLocaleString()} />
         <Metric label="Review velocity" value={(side.metrics.reviewVelocity ?? 0).toFixed(2)} suffix="/day" />

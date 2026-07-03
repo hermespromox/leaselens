@@ -94,13 +94,12 @@ function daysSince(dateString?: string) {
 }
 
 function score(metrics: Record<string, number>) {
-  const densityScore = Math.min(metrics.poiCount / 25, 1) * 24;
-  const volumeScore = Math.min(metrics.totalReviews / 15000, 1) * 20;
-  const velocityScore = Math.min(metrics.reviewsInWindow / 35, 1) * 24;
-  const weakOpportunityScore = Math.min(metrics.weakCompetitors / 8, 1) * 14;
-  const websiteGapScore = Math.min(metrics.noWebsite / 8, 1) * 8;
-  const qualityScore = Math.min(Math.max((metrics.avgRating - 3.6) / 1.2, 0), 1) * 10;
-  return Math.round(densityScore + volumeScore + velocityScore + weakOpportunityScore + websiteGapScore + qualityScore);
+  const densityScore = Math.min(metrics.poiCount / 180, 1) * 28;
+  const volumeScore = Math.min(metrics.totalReviews / 60000, 1) * 30;
+  const reviewDepthScore = Math.min(metrics.medianReviews / 450, 1) * 14;
+  const qualityScore = Math.min(Math.max((metrics.avgRating - 4.0) / 0.8, 0), 1) * 18;
+  const velocityScore = Math.min(metrics.reviewVelocity / 0.8, 1) * 10;
+  return Math.round(densityScore + volumeScore + reviewDepthScore + qualityScore + velocityScore);
 }
 
 async function getReviews(place: NearbyPlace, country: string, windowDays: number) {
@@ -110,7 +109,7 @@ async function getReviews(place: NearbyPlace, country: string, windowDays: numbe
       business_id: place.business_id,
       country,
       lang: 'en',
-      limit: 5,
+      limit: 10,
       sort: 'Newest',
     });
     const reviews: Review[] = data?.data?.reviews || [];
@@ -135,7 +134,7 @@ async function analyze(label: 'A' | 'B', input: string, category: string, radius
   const places: NearbyPlace[] = (nearby?.data || []).filter((p: NearbyPlace) => p?.business_id);
   const reviewSamplePlaces = [...places]
     .sort((a, b) => (b.review_count || 0) - (a.review_count || 0))
-    .slice(0, 4);
+    .slice(0, 8);
 
   const reviewResults = await Promise.all(reviewSamplePlaces.map((p) => getReviews(p, country, reviewWindowDays)));
   const recentComments = reviewResults.flatMap((res, index) => {
@@ -153,8 +152,6 @@ async function analyze(label: 'A' | 'B', input: string, category: string, radius
   const ratings = places.map((p) => Number(p.rating)).filter(Number.isFinite);
   const reviewCounts = places.map((p) => Number(p.review_count || 0));
   const reviewsInWindow = reviewResults.reduce((sum, r) => sum + r.inWindow, 0);
-  const weakCompetitors = places.filter((p) => Number(p.rating || 0) < 4 && Number(p.review_count || 0) >= 20).length;
-  const noWebsite = places.filter((p) => !p.website).length;
   const totalReviews = reviewCounts.reduce((a, b) => a + b, 0);
   const avgRating = ratings.length ? ratings.reduce((a, b) => a + b, 0) / ratings.length : 0;
 
@@ -170,8 +167,6 @@ async function analyze(label: 'A' | 'B', input: string, category: string, radius
     reviewsInWindow,
     reviewVelocity: Number(reviewVelocity.toFixed(3)),
     reviewVelocityPerPlace: Number(reviewVelocityPerPlace.toFixed(3)),
-    weakCompetitors,
-    noWebsite,
     activityIndex: Number(((reviewsInWindow / Math.max(reviewSamplePlaces.length, 1)) * 10).toFixed(2)),
   };
 
@@ -208,8 +203,8 @@ export async function POST(req: NextRequest) {
     const winner = A.score === B.score ? 'Tie' : A.score > B.score ? 'A' : 'B';
     const better = winner === 'A' ? A : winner === 'B' ? B : null;
     const summary = better
-      ? `Place ${winner} looks stronger for “${category}”: ${better.metrics.poiCount} nearby POIs, ${better.metrics.totalReviews.toLocaleString()} total reviews, ${better.metrics.reviewsInWindow} newest sampled reviews inside ${reviewWindowDays} days, about ${better.metrics.reviewVelocity.toFixed(2)} sampled reviews/day, and ${better.metrics.weakCompetitors} weak competitors.`
-      : `The two locations are close. Compare the mix of weak competitors, review velocity and category density before deciding.`;
+      ? `Place ${winner} looks stronger for “${category}”: ${better.metrics.poiCount} nearby POIs, ${better.metrics.totalReviews.toLocaleString()} total reviews, median ${Math.round(better.metrics.medianReviews).toLocaleString()} reviews per place, average rating ${better.metrics.avgRating.toFixed(2)}, and about ${better.metrics.reviewVelocity.toFixed(2)} sampled reviews/day.`
+      : `The two locations are close. Compare density, total review volume, average rating, median review depth and review velocity before deciding.`;
 
     return NextResponse.json({
       winner,

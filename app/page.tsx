@@ -58,8 +58,6 @@ function SideCard({ side }: { side: Side }) {
         <Metric label="Recent sampled" value={side.metrics.reviewsInWindow ?? 0} />
         <Metric label="Review velocity" value={(side.metrics.reviewVelocity ?? 0).toFixed(2)} suffix="/day" />
         <Metric label="Per-place velocity" value={(side.metrics.reviewVelocityPerPlace ?? 0).toFixed(3)} suffix="/day" />
-        <Metric label="Weak competitors" value={side.metrics.weakCompetitors ?? 0} />
-        <Metric label="No website" value={side.metrics.noWebsite ?? 0} />
         <Metric label="Median reviews" value={Math.round(side.metrics.medianReviews ?? 0).toLocaleString()} />
         <Metric label="Activity index" value={(side.metrics.activityIndex ?? 0).toFixed(1)} />
       </div>
@@ -67,7 +65,7 @@ function SideCard({ side }: { side: Side }) {
       {side.topPlaces.slice(0, 8).map((p) => (
         <div className="place" key={`${side.label}-${p.name}-${p.full_address}`}>
           <strong>{p.place_link ? <a href={p.place_link} target="_blank">{p.name}</a> : p.name}</strong>
-          <small>{p.rating ?? '—'} ★ · {(p.review_count ?? 0).toLocaleString()} reviews · {p.website || 'no website'}</small>
+          <small>{p.rating ?? '—'} ★ · {(p.review_count ?? 0).toLocaleString()} reviews</small>
           <small>{p.full_address}</small>
         </div>
       ))}
@@ -103,7 +101,7 @@ export default function Home() {
     category: 'coffee shop',
     radiusMeters: '800',
     reviewWindowDays: '90',
-    maxResults: '100',
+    maxResults: '500',
     country: 'fr',
   });
   const [loading, setLoading] = useState(false);
@@ -139,7 +137,7 @@ export default function Home() {
   return (
     <main>
       <nav className="nav">
-        <a className="brand" href="#top">LeaseLens</a>
+        <a className="brand" href="#top"><span className="material-symbols-outlined logo-icon">alt_route</span><span>LeaseLens</span></a>
         <div>
           <a href="#product">Product</a>
           <a href="#pricing">Pricing</a>
@@ -182,17 +180,6 @@ export default function Home() {
                   <option value="3000">3km</option>
                 </select>
               </label>
-              <label>Max POIs
-                <select value={form.maxResults} onChange={e => setForm({...form, maxResults: e.target.value})}>
-                  <option value="20">20</option>
-                  <option value="50">50</option>
-                  <option value="100">100</option>
-                  <option value="250">250</option>
-                  <option value="500">500</option>
-                </select>
-              </label>
-            </div>
-            <div className="row">
               <label>Recent window
                 <select value={form.reviewWindowDays} onChange={e => setForm({...form, reviewWindowDays: e.target.value})}>
                   <option value="30">30 days</option>
@@ -201,10 +188,10 @@ export default function Home() {
                   <option value="365">365 days</option>
                 </select>
               </label>
-              <label>Country
-                <input value={form.country} onChange={e => setForm({...form, country: e.target.value.toLowerCase()})} placeholder="fr" />
-              </label>
             </div>
+            <label>Country
+              <input value={form.country} onChange={e => setForm({...form, country: e.target.value.toLowerCase()})} placeholder="fr" />
+            </label>
             <button className="primary" disabled={loading}>{loading ? 'Scanning Maps data…' : 'Compare locations'}</button>
             <p className="notice">Scores are decision support, not official footfall measurement. Review sampling stays limited for speed.</p>
           </form>
@@ -233,11 +220,11 @@ export default function Home() {
         <div>
           <p className="kicker">Product</p>
           <h2>From map noise to lease signal.</h2>
-          <p className="subtle">Use local POI density, customer activity and competitor weakness to defend a site recommendation before the lease is signed.</p>
+          <p className="subtle">Use local POI density, customer activity and review depth to defend a site recommendation before the lease is signed.</p>
         </div>
         <div className="feature-grid">
           <div className="feature"><b>Demand proxy</b><span>Total reviews and review velocity show where customers are active now.</span></div>
-          <div className="feature"><b>Competitive pressure</b><span>See density, strong operators, weak competitors and businesses with missing websites.</span></div>
+          <div className="feature"><b>Market pressure</b><span>See density, strong operators, review depth and rating quality around each address.</span></div>
           <div className="feature"><b>Decision-ready</b><span>Place A vs Place B scoring with the reasons behind the recommendation.</span></div>
           <div className="feature"><b>Fast reports</b><span>Designed for brokers, franchise teams, founders and agencies that need a quick answer.</span></div>
         </div>

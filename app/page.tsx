@@ -186,6 +186,15 @@ export default function Home() {
             </label>
             <p className="notice">Radius is fixed at {DEFAULT_RADIUS_METERS}m for consistent comparisons.</p>
             <button className="primary" disabled={loading}>{loading ? 'Scanning Maps data…' : 'Compare locations'}</button>
+            {loading && (
+              <div className="charge-loader" role="status" aria-live="polite">
+                <div className="charge-copy">
+                  <span>Building comparison</span>
+                  <strong>Scanning places, reviews and activity signals…</strong>
+                </div>
+                <div className="charge-track"><span /></div>
+              </div>
+            )}
             <p className="notice">Example Paris restaurant comparison is pre-filled. Scores are decision support, not official footfall measurement. Review sampling stays limited for speed.</p>
           </form>
         </div>
@@ -193,7 +202,17 @@ export default function Home() {
 
       <section className="shell results-wrap">
         {error && <div className="error">{error}</div>}
-        {!result && !error && <div className="panel empty">Run the demo above to generate a live Place A vs Place B report.</div>}
+        {loading && (
+          <div className="panel loading-panel" role="status" aria-live="polite">
+            <div>
+              <p className="kicker">Live scan running</p>
+              <h3>Charging the location signal…</h3>
+              <p className="notice">This usually takes a few seconds while LeaseLens fetches nearby places and newest review timestamps.</p>
+            </div>
+            <div className="charge-track large"><span /></div>
+          </div>
+        )}
+        {!loading && !result && !error && <div className="panel empty">Run the demo above to generate a live Place A vs Place B report.</div>}
         {result && (
           <>
             <div className="panel winner-panel">

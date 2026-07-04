@@ -32,56 +32,58 @@ export default function NavBar({ active, variant = 'marketing' }: { active?: 'co
 
   return (
     <nav className="nav">
-      <Link className="brand" href="/" aria-label="LeaseLens">
-        <span aria-hidden="true" className="material-symbols-outlined logo-icon">alt_route</span>
-        <span>LeaseLens</span>
-      </Link>
+      <div className="nav-inner">
+        <Link className="brand" href="/" aria-label="LeaseLens">
+          <span aria-hidden="true" className="material-symbols-outlined logo-icon">alt_route</span>
+          <span>LeaseLens</span>
+        </Link>
 
-      <div className="nav-links">
-        {contextLinks.map((link) => (
-          <a key={link.href} href={link.href}>{link.label}</a>
-        ))}
-        {variant === 'app' && (
-          <Link href="/#compare" className={active === 'compare' ? 'nav-active' : undefined}>Compare</Link>
-        )}
-        <Link href="/history" className={active === 'history' ? 'nav-active' : undefined}>History</Link>
-        {variant === 'marketing' && <a href="/#legal">Legal</a>}
-        {isAuthed ? (
-          <Link href="/account" className={`nav-account ${active === 'account' ? 'nav-active' : ''}`}>
-            <span className="material-symbols-outlined nav-account-icon">account_circle</span>
-            {session?.email}
-          </Link>
-        ) : (
-          <Link href="/login" className="nav-cta">Log in</Link>
-        )}
-      </div>
-
-      <button
-        className="nav-toggle"
-        aria-label={open ? 'Close menu' : 'Open menu'}
-        aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
-      >
-        <span className="material-symbols-outlined">{open ? 'close' : 'menu'}</span>
-      </button>
-
-      {open && (
-        <div className="nav-sheet">
+        <div className="nav-links">
           {contextLinks.map((link) => (
-            <a key={link.href} href={link.href} onClick={() => setOpen(false)}>{link.label}</a>
+            <a key={link.href} href={link.href}>{link.label}</a>
           ))}
           {variant === 'app' && (
-            <Link href="/#compare" onClick={() => setOpen(false)}>Compare</Link>
+            <Link href="/#compare" className={active === 'compare' ? 'nav-active' : undefined}>Compare</Link>
           )}
-          <Link href="/history" onClick={() => setOpen(false)}>History</Link>
+          <Link href="/history" className={active === 'history' ? 'nav-active' : undefined}>History</Link>
+          {variant === 'marketing' && <a href="/#legal">Legal</a>}
           {isAuthed ? (
-            <Link href="/account" onClick={() => setOpen(false)}>Account · {session?.email}</Link>
+            <Link href="/account" className={`nav-account ${active === 'account' ? 'nav-active' : ''}`}>
+              <span className="material-symbols-outlined nav-account-icon">account_circle</span>
+              {session?.email}
+            </Link>
           ) : (
-            <Link href="/login" onClick={() => setOpen(false)}>Log in</Link>
+            <Link href="/login" className="nav-cta">Log in</Link>
           )}
-          {variant === 'marketing' && <a href="/#legal" onClick={() => setOpen(false)}>Legal</a>}
         </div>
-      )}
+
+        <button
+          className="nav-toggle"
+          aria-label={open ? 'Close menu' : 'Open menu'}
+          aria-expanded={open}
+          onClick={() => setOpen((v) => !v)}
+        >
+          <span className="material-symbols-outlined">{open ? 'close' : 'menu'}</span>
+        </button>
+
+        {open && (
+          <div className="nav-sheet">
+            {contextLinks.map((link) => (
+              <a key={link.href} href={link.href} onClick={() => setOpen(false)}>{link.label}</a>
+            ))}
+            {variant === 'app' && (
+              <Link href="/#compare" onClick={() => setOpen(false)}>Compare</Link>
+            )}
+            <Link href="/history" onClick={() => setOpen(false)}>History</Link>
+            {isAuthed ? (
+              <Link href="/account" onClick={() => setOpen(false)}>Account · {session?.email}</Link>
+            ) : (
+              <Link href="/login" onClick={() => setOpen(false)}>Log in</Link>
+            )}
+            {variant === 'marketing' && <a href="/#legal" onClick={() => setOpen(false)}>Legal</a>}
+          </div>
+        )}
+      </div>
     </nav>
   );
 }

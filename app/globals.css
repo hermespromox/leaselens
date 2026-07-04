@@ -32,11 +32,14 @@ button:focus-visible, a:focus-visible { outline-offset: 2px; }
 .shell { width: min(1180px, calc(100vw - 36px)); margin: 0 auto; }
 .nav {
   position: sticky; top: 0; z-index: 10;
-  display: flex; justify-content: space-between; align-items: center;
-  width: min(1180px, calc(100vw - 36px)); margin: 0 auto; padding: 18px 0;
+  width: 100%;
   background: color-mix(in srgb, var(--bg) 82%, transparent); backdrop-filter: blur(16px);
 }
-.nav div { display: flex; gap: 18px; color: var(--muted); font-size: 14px; }
+.nav-inner {
+  position: relative;
+  display: flex; justify-content: space-between; align-items: center;
+  width: min(1180px, calc(100vw - 36px)); margin: 0 auto; padding: 18px 0;
+}
 .nav-links { display: flex; align-items: center; gap: 18px; color: var(--muted); font-size: 14px; }
 .nav-links a { transition: color .15s ease; }
 .nav-links a:hover { color: var(--ink); }
@@ -262,7 +265,7 @@ ul { padding-left: 20px; color: #3d4651; line-height: 1.9; }
   .hero { padding-top: 40px; }
 }
 @media (max-width: 560px) {
-  .shell, .nav { width: min(100vw - 22px, 1180px); }
+  .shell, .nav-inner { width: min(100vw - 22px, 1180px); }
   .nav-links { display: none; }
   .nav-toggle { display: flex; }
   .row, .scoreboard, .feature-grid, .metrics { grid-template-columns: 1fr; }

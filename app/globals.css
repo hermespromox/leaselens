@@ -93,23 +93,12 @@ button.primary:disabled { opacity: .62; cursor: wait; transform: none; box-shado
 }
 .form-panel { padding: 20px; }
 .form { display: grid; gap: 12px; }
-label, .form-field { display: grid; gap: 7px; color: #4f5965; font-size: 13px; font-weight: 650; }
-.field-label { display: block; }
+label { display: grid; gap: 7px; color: #4f5965; font-size: 13px; font-weight: 650; }
 input, select {
   width: 100%; border: 1px solid var(--line); border-radius: 16px; padding: 12px 13px;
   background: #fff; color: var(--ink); outline: none;
 }
 input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(255,107,53,.12); }
-.category-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-.category-option {
-  border: 1px solid var(--line); background: #fff; color: var(--ink); border-radius: 14px; padding: 10px 11px;
-  display: flex; align-items: center; justify-content: space-between; gap: 8px; font-weight: 800; cursor: pointer;
-  transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease, background .15s ease;
-}
-.category-option:hover:not(:disabled) { border-color: var(--accent); transform: translateY(-1px); box-shadow: 0 8px 20px rgba(16,20,24,.08); }
-.category-option.selected { border-color: var(--accent); background: var(--soft); box-shadow: 0 0 0 3px rgba(255,107,53,.12); }
-.category-option.locked { color: #8a94a3; background: #f8fafc; cursor: not-allowed; opacity: 1; }
-.category-option em { font-style: normal; border-radius: 999px; padding: 3px 8px; background: #edf1f5; color: #697586; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: .08em; }
 .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .notice { color: var(--muted); font-size: 12px; line-height: 1.45; margin-bottom: 0; }
 .charge-loader {
@@ -333,6 +322,5 @@ ul { padding-left: 20px; color: #3d4651; line-height: 1.9; }
   .nav-toggle { display: flex; }
   .row, .scoreboard, .feature-grid, .metrics { grid-template-columns: 1fr; }
   h1 { font-size: 38px; }
-  .category-grid { grid-template-columns: 1fr; }
   .footer { flex-direction: column; }
 }

@@ -60,6 +60,12 @@ const MAX_429_RETRIES = 3;
 const ACTIVE_PLACE_MIN_REVIEWS = 50;
 const MAPS_NEARBY_ZOOM = 15;
 const ACTIVE_PLACE_DISTANCE_LIMIT_METERS = 1000;
+const AREA_VISITORS_ROUNDING_STEP = 500;
+
+function roundUpToNearest(value: number, step: number) {
+  if (!Number.isFinite(value) || value <= 0) return 0;
+  return Math.ceil(value / step) * step;
+}
 
 function rapidKey() {
   const key = process.env.RAPIDAPI_KEY || process.env.RAPID_MAPS_KEY;
@@ -421,7 +427,7 @@ async function analyze(label: 'A' | 'B', input: string, category: string, radius
   const avgRating = ratings.length ? ratings.reduce((a, b) => a + b, 0) / ratings.length : 0;
 
   const reviewVelocity = reviewsInWindow / Math.max(reviewWindowDays, 1);
-  const areaVisitorsPerDay = reviewVelocity * 1000;
+  const areaVisitorsPerDay = roundUpToNearest(reviewVelocity * 1000, AREA_VISITORS_ROUNDING_STEP);
   const reviewVelocityPerPlace = reviewVelocity / Math.max(reviewSamplePlaces.length, 1);
   const reviewSampleCapacity = reviewSamplePlaces.length * REVIEWS_PER_PLACE_LIMIT;
   const activityIndex = reviewSampleCapacity
@@ -441,7 +447,7 @@ async function analyze(label: 'A' | 'B', input: string, category: string, radius
     reviewsInWindow,
     reviewSampleCapacity,
     reviewVelocity: Number(reviewVelocity.toFixed(3)),
-    areaVisitorsPerDay: Math.round(areaVisitorsPerDay),
+    areaVisitorsPerDay,
     reviewVelocityPerPlace: Number(reviewVelocityPerPlace.toFixed(3)),
     activityIndex: Number(activityIndex.toFixed(1)),
   };

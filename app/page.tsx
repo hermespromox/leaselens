@@ -46,6 +46,12 @@ function Metric({ label, value, suffix = '' }: { label: string; value: number | 
 }
 
 const DISPLAY_DISTANCE_LIMIT_METERS = 1000;
+const AREA_VISITORS_ROUNDING_STEP = 500;
+
+function roundUpToNearest(value: number, step: number) {
+  if (!Number.isFinite(value) || value <= 0) return 0;
+  return Math.ceil(value / step) * step;
+}
 
 function displayDistance(meters?: number) {
   if (!Number.isFinite(meters)) return null;
@@ -59,6 +65,7 @@ function withinDisplayDistance(meters?: number) {
 function SideCard({ side }: { side: Side }) {
   const displayedPlaces = side.topPlaces.filter((p) => withinDisplayDistance(p.distanceMeters));
   const displayedComments = side.recentComments.filter((c) => withinDisplayDistance(c.distanceMeters));
+  const areaVisitorsPerDay = roundUpToNearest(side.metrics.areaVisitorsPerDay ?? (side.metrics.reviewVelocity ?? 0) * 1000, AREA_VISITORS_ROUNDING_STEP);
 
   return (
     <div className="panel result-card">
@@ -74,11 +81,11 @@ function SideCard({ side }: { side: Side }) {
         <Metric label="Active nearby places" value={side.metrics.activePoiCount ?? side.metrics.poiCount ?? 0} />
         <Metric label="Avg rating" value={(side.metrics.avgRating ?? 0).toFixed(2)} />
         <Metric label="Total reviews" value={Math.round(side.metrics.totalReviews ?? 0).toLocaleString()} />
-        <Metric label="Area visitors" value={Math.round(side.metrics.areaVisitorsPerDay ?? (side.metrics.reviewVelocity ?? 0) * 1000).toLocaleString()} suffix="/day" />
+        <Metric label="Area visitors" value={areaVisitorsPerDay.toLocaleString()} suffix="/day" />
         <Metric label="Median reviews" value={Math.round(side.metrics.medianReviews ?? 0).toLocaleString()} />
         <Metric label="Activity index" value={(side.metrics.activityIndex ?? 0).toFixed(1)} suffix="%" />
       </div>
-      <p className="notice">Area visitors is estimated as review velocity × 1,000. Active nearby places only counts POIs within 1 km that have at least 50 reviews. Activity index is included in the final score.</p>
+      <p className="notice">Area visitors is estimated as review velocity × 1,000, rounded up to the nearest 500. Active nearby places only counts POIs within 1 km that have at least 50 reviews. Activity index is included in the final score.</p>
       <h3 className="section-title">Top active nearby places</h3>
       {displayedPlaces.length ? displayedPlaces.slice(0, 5).map((p) => (
         <div className="place" key={`${side.label}-${p.name}-${p.full_address}`}>

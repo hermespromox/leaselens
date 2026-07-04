@@ -350,12 +350,12 @@ function daysSince(dateString?: string) {
 }
 
 function score(metrics: Record<string, number>) {
-  const densityScore = Math.min(metrics.poiCount / 180, 1) * 24;
-  const volumeScore = Math.min(metrics.totalReviews / 60000, 1) * 26;
-  const reviewDepthScore = Math.min(metrics.medianReviews / 450, 1) * 12;
-  const qualityScore = Math.min(Math.max((metrics.avgRating - 4.0) / 0.8, 0), 1) * 18;
+  const densityScore = Math.min(metrics.poiCount / 180, 1) * 22;
+  const volumeScore = Math.min(metrics.totalReviews / 60000, 1) * 22;
+  const reviewDepthScore = Math.min(metrics.medianReviews / 450, 1) * 10;
+  const qualityScore = Math.min(Math.max((metrics.avgRating - 4.0) / 0.8, 0), 1) * 16;
   const velocityScore = Math.min(metrics.reviewVelocity / 0.8, 1) * 10;
-  const activityScore = Math.min(metrics.activityIndex / 100, 1) * 10;
+  const activityScore = Math.min(metrics.activityIndex / 100, 1) * 20;
   return Math.round(densityScore + volumeScore + reviewDepthScore + qualityScore + velocityScore + activityScore);
 }
 

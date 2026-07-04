@@ -34,6 +34,48 @@ function rapidKey() {
   return key;
 }
 
+function supabaseConfig() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return null;
+  return { url: url.replace(/\/$/, ''), key };
+}
+
+async function saveComparison(criteria: Record<string, unknown>, result: Record<string, unknown>) {
+  const config = supabaseConfig();
+  if (!config) return null;
+
+  try {
+    const res = await fetch(`${config.url}/rest/v1/searches`, {
+      method: 'POST',
+      headers: {
+        apikey: config.key,
+        Authorization: `Bearer ${config.key}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=representation',
+      },
+      body: JSON.stringify({
+        url: 'leaselens:compare',
+        criteria,
+        result,
+      }),
+      cache: 'no-store',
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      console.warn(`Supabase save skipped: ${res.status} ${text.slice(0, 180)}`);
+      return null;
+    }
+
+    const rows = await res.json();
+    return Array.isArray(rows) ? rows[0]?.id ?? null : rows?.id ?? null;
+  } catch (err) {
+    console.warn('Supabase save skipped:', err);
+    return null;
+  }
+}
+
 async function rapid(path: string, params: Record<string, string | number | undefined>) {
   const url = new URL(path, BASE);
   for (const [key, value] of Object.entries(params)) {
@@ -214,7 +256,7 @@ export async function POST(req: NextRequest) {
       ? `Place ${winner} looks stronger for “${category}”: ${better.metrics.poiCount} nearby POIs, ${better.metrics.totalReviews.toLocaleString()} total reviews, median ${Math.round(better.metrics.medianReviews).toLocaleString()} reviews per place, average rating ${better.metrics.avgRating.toFixed(2)}, and about ${better.metrics.reviewVelocity.toFixed(2)} sampled reviews/day.`
       : `The two locations are close. Compare density, total review volume, average rating, median review depth and review velocity before deciding.`;
 
-    return NextResponse.json({
+    const result = {
       winner,
       summary,
       category,
@@ -222,6 +264,23 @@ export async function POST(req: NextRequest) {
       reviewWindowDays,
       maxResults,
       sides: { A, B },
+    };
+    const savedSearchId = await saveComparison({
+      placeA,
+      placeB,
+      category,
+      country,
+      radiusMeters,
+      reviewWindowDays,
+      maxResults,
+    }, result);
+
+    return NextResponse.json({
+      ...result,
+      storage: {
+        saved: Boolean(savedSearchId),
+        id: savedSearchId,
+      },
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unexpected server error';

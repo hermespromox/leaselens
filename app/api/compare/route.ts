@@ -571,7 +571,11 @@ export async function POST(req: NextRequest) {
     const pool = postgresPool();
 
     if (user) {
-      if (pool) {
+      // Unlimited for admin/internal accounts
+      const UNLIMITED_EMAILS = ['hassine.achour@gmail.com'];
+      if (user.email && UNLIMITED_EMAILS.includes(user.email.toLowerCase())) {
+        // No limit, proceed
+      } else if (pool) {
         const used = await countUserMonthlyBenchmarks(pool, user.id);
         if (used >= FREE_BENCHMARK_LIMIT) {
           return NextResponse.json({

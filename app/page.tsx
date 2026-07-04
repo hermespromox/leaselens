@@ -152,6 +152,7 @@ const methodSteps = [
   ['We score and compare', 'Active place density, rating quality, review depth, estimated area visitors and Activity index are combined into one score per address so you can see which location wins, and why.'],
 ];
 const tiers = [
+  { name: 'Free', original: '', price: '€0', period: '/month', desc: 'Try it out', items: ['5 benchmarks / month', 'Active POI density', 'Area visitors/day', 'Report view'], popular: false },
   { name: 'Starter', original: '€99', price: '€49', period: '/month', desc: 'One-off location checks', items: ['10 benchmarks', 'Active POI density', 'Area visitors/day', 'Report view'], popular: false },
   { name: 'Pro', original: '€299', price: '€149', period: '/month', desc: 'For brokers and operators', items: ['100 benchmarks', 'Up to 500 POIs/search', 'Recent comments', 'Saved history'], popular: true },
   { name: 'Studio', original: '', price: 'Custom', period: '', desc: 'For teams and APIs', items: ['Team workspace', 'Bulk address lists', 'White-label reports', 'Custom data providers'], popular: false },
@@ -183,6 +184,8 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState('');
+  const [locked, setLocked] = useState(false);
+  const [lockedMessage, setLockedMessage] = useState('');
   const winnerAddress = getWinnerAddress(result);
 
   async function submit(e: React.FormEvent) {
@@ -202,7 +205,15 @@ export default function Home() {
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || 'Benchmark failed');
+      if (!res.ok) {
+        if (res.status === 403 && data?.locked) {
+          setLocked(true);
+          setLockedMessage(data?.error || 'You have reached your limit.');
+          setLoading(false);
+          return;
+        }
+        throw new Error(data?.error || 'Benchmark failed');
+      }
       setResult(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unexpected error');
@@ -229,6 +240,17 @@ export default function Home() {
           </div>
         </div>
         <div id="compare" className="panel form-panel">
+          {locked ? (
+            <div className="lock-screen">
+              <span className="material-symbols-outlined lock-icon" aria-hidden="true">lock</span>
+              <h3>{lockedMessage}</h3>
+              <p className="notice">Create a free account to get 5 benchmarks per month, or choose a paid plan for more.</p>
+              <div className="hero-actions" style={{ marginTop: 16 }}>
+                <a className="primary-link" href="/signup">Create free account</a>
+                <a className="secondary-link" href="/login">Log in</a>
+              </div>
+            </div>
+          ) : (
           <form className="form" onSubmit={submit}>
             <label>Place A address or lat,lng
               <input value={form.placeA} onChange={e => setForm({...form, placeA: e.target.value})} placeholder="30 rue Myrha, 75018 Paris" required />
@@ -256,6 +278,7 @@ export default function Home() {
             )}
             <p className="notice">Example Paris restaurant benchmark is pre-filled. Scores are decision support, not official footfall measurement.</p>
           </form>
+          )}
         </div>
       </section>
 

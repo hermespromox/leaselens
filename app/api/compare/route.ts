@@ -64,6 +64,78 @@ const MAPS_NEARBY_ZOOM = 15;
 const ACTIVE_PLACE_DISTANCE_LIMIT_METERS = 1000;
 const AREA_VISITORS_ROUNDING_STEP = 500;
 const DEFAULT_CATEGORY = 'restaurant';
+const ANON_BENCHMARK_LIMIT = 1;
+const FREE_BENCHMARK_LIMIT = 5;
+const ANON_COOKIE_NAME = 'asklizy_anon';
+const ANON_COOKIE_SECRET = process.env.ANON_COOKIE_SECRET || 'asklizy-anon-signing-key-2024';
+
+function signCookieValue(payload: string): string {
+  const crypto = require('crypto');
+  const hmac = crypto.createHmac('sha256', ANON_COOKIE_SECRET);
+  hmac.update(payload);
+  return hmac.digest('hex');
+}
+
+function createAnonCookie(count: number): string {
+  const payload = JSON.stringify({ c: count, ts: Date.now() });
+  const encoded = Buffer.from(payload).toString('base64url');
+  const sig = signCookieValue(encoded);
+  return `${encoded}.${sig}`;
+}
+
+function verifyAnonCookie(raw: string | undefined): { count: number; valid: boolean } {
+  if (!raw || !raw.includes('.')) return { count: 0, valid: false };
+  const [encoded, sig] = raw.split('.');
+  const expectedSig = signCookieValue(encoded);
+  if (sig !== expectedSig) return { count: 0, valid: false };
+  try {
+    const payload = JSON.parse(Buffer.from(encoded, 'base64url').toString());
+    return { count: Number(payload.c) || 0, valid: true };
+  } catch {
+    return { count: 0, valid: false };
+  }
+}
+
+function hashIp(ip: string): string {
+  const crypto = require('crypto');
+  return crypto.createHash('sha256').update(ANON_COOKIE_SECRET + ip).digest('hex');
+}
+
+async function countAnonByIp(pool: Pool, ipHash: string): Promise<number> {
+  try {
+    await ensureLeaselenseSchema(pool);
+    const res = await pool.query(
+      `SELECT count(*) as cnt FROM leaselense.anon_benchmarks WHERE ip_hash = $1 AND created_at >= date_trunc('month', now())`,
+      [ipHash]
+    );
+    return Number(res.rows[0]?.cnt) || 0;
+  } catch {
+    return 0;
+  }
+}
+
+async function recordAnonBenchmark(pool: Pool, ipHash: string): Promise<void> {
+  try {
+    await pool.query(
+      `INSERT INTO leaselense.anon_benchmarks (ip_hash) VALUES ($1)`,
+      [ipHash]
+    );
+  } catch (err) {
+    console.warn('Failed to record anon benchmark:', err);
+  }
+}
+
+async function countUserMonthlyBenchmarks(pool: Pool, userId: string): Promise<number> {
+  try {
+    const res = await pool.query(
+      `SELECT count(*) as cnt FROM leaselense.comparisons WHERE user_id = $1 AND created_at >= date_trunc('month', now())`,
+      [userId]
+    );
+    return Number(res.rows[0]?.cnt) || 0;
+  } catch {
+    return 0;
+  }
+}
 
 function roundUpToNearest(value: number, step: number) {
   if (!Number.isFinite(value) || value <= 0) return 0;
@@ -182,6 +254,14 @@ async function ensureLeaselenseSchema(pool: Pool) {
         text_excerpt text,
         created_at timestamptz not null default now()
       );
+
+      create table if not exists leaselense.anon_benchmarks (
+        id bigserial primary key,
+        ip_hash text not null,
+        created_at timestamptz not null default now()
+      );
+
+      create index if not exists anon_benchmarks_ip_hash_idx on leaselense.anon_benchmarks (ip_hash, created_at desc);
 
       create index if not exists comparisons_created_at_idx on leaselense.comparisons (created_at desc);
       create index if not exists comparisons_category_idx on leaselense.comparisons (category);
@@ -487,6 +567,43 @@ export async function POST(req: NextRequest) {
     const maxResults = Math.min(Math.max(Number(body.maxResults || 100), 20), 500);
     if (!placeA || !placeB) return NextResponse.json({ error: 'Place A and Place B are required.' }, { status: 400 });
 
+    // ── Rate limiting ──
+    const pool = postgresPool();
+
+    if (user) {
+      if (pool) {
+        const used = await countUserMonthlyBenchmarks(pool, user.id);
+        if (used >= FREE_BENCHMARK_LIMIT) {
+          return NextResponse.json({
+            error: 'You have reached your free monthly limit of 5 benchmarks. Upgrade to a paid plan for more.',
+            locked: true,
+            limit: FREE_BENCHMARK_LIMIT,
+            used,
+          }, { status: 403 });
+        }
+      }
+    } else {
+      const anonCookie = req.cookies.get(ANON_COOKIE_NAME)?.value;
+      const cookieData = verifyAnonCookie(anonCookie);
+      const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.headers.get('x-real-ip') || '0.0.0.0';
+      const ipHash = hashIp(ip);
+
+      let anonCount = cookieData.count;
+
+      if (pool) {
+        const ipCount = await countAnonByIp(pool, ipHash);
+        anonCount = Math.max(anonCount, ipCount);
+      }
+
+      if (anonCount >= ANON_BENCHMARK_LIMIT) {
+        return NextResponse.json({
+          error: 'You have used your free benchmark. Create an account to get 5 benchmarks per month.',
+          locked: true,
+          limit: ANON_BENCHMARK_LIMIT,
+        }, { status: 403 });
+      }
+    }
+
     const [A, B] = await Promise.all([
       analyze('A', placeA, category, radiusMeters, reviewWindowDays, country, maxResults),
       analyze('B', placeB, category, radiusMeters, reviewWindowDays, country, maxResults),
@@ -495,7 +612,7 @@ export async function POST(req: NextRequest) {
     const winner = A.score === B.score ? 'Tie' : A.score > B.score ? 'A' : 'B';
     const better = winner === 'A' ? A : winner === 'B' ? B : null;
     const summary = better
-      ? `${better.displayAddress || better.input} looks stronger for “${category}”: ${better.metrics.poiCount} active nearby places within 1 km, ${better.metrics.totalReviews.toLocaleString()} total reviews, median ${Math.round(better.metrics.medianReviews).toLocaleString()} reviews per place, average rating ${better.metrics.avgRating.toFixed(2)}, about ${Math.round(better.metrics.areaVisitorsPerDay).toLocaleString()} estimated area visitors/day, and ${better.metrics.activityIndex.toFixed(1)}% recent review freshness.`
+      ? `${better.displayAddress || better.input} looks stronger for "${category}": ${better.metrics.poiCount} active nearby places within 1 km, ${better.metrics.totalReviews.toLocaleString()} total reviews, median ${Math.round(better.metrics.medianReviews).toLocaleString()} reviews per place, average rating ${better.metrics.avgRating.toFixed(2)}, about ${Math.round(better.metrics.areaVisitorsPerDay).toLocaleString()} estimated area visitors/day, and ${better.metrics.activityIndex.toFixed(1)}% recent review freshness.`
       : `The two locations are close. Compare active nearby places, total review volume, average rating, median review depth, estimated area visitors and activity index before deciding.`;
 
     const result: ComparisonResult = {
@@ -517,14 +634,38 @@ export async function POST(req: NextRequest) {
       maxResults,
     }, result, user?.id ?? null);
 
-    return NextResponse.json({
+    // ── Increment anonymous counter ──
+    let responseHeaders: Record<string, string> = {};
+    if (!user && pool) {
+      const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.headers.get('x-real-ip') || '0.0.0.0';
+      const ipHash = hashIp(ip);
+      await recordAnonBenchmark(pool, ipHash);
+
+      const anonCookie = req.cookies.get(ANON_COOKIE_NAME)?.value;
+      const cookieData = verifyAnonCookie(anonCookie);
+      const newCount = cookieData.count + 1;
+      const cookieValue = createAnonCookie(newCount);
+      responseHeaders['set-cookie'] = `${ANON_COOKIE_NAME}=${cookieValue}; HttpOnly; Secure; SameSite=Lax; Max-Age=2592000; Path=/`;
+    }
+
+    const responseBody = {
       ...result,
       storage: {
         saved: Boolean(savedSearch),
         id: savedSearch?.id ?? null,
         provider: savedSearch?.provider ?? null,
       },
-    });
+    };
+
+    if (Object.keys(responseHeaders).length) {
+      const response = NextResponse.json(responseBody);
+      for (const [key, value] of Object.entries(responseHeaders)) {
+        response.headers.set(key, value);
+      }
+      return response;
+    }
+
+    return NextResponse.json(responseBody);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unexpected server error';
     return NextResponse.json({ error: message }, { status: 500 });

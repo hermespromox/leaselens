@@ -50,7 +50,7 @@ export default async function HistoryDetailPage({ params }: { params: { id: stri
                   <div className="metric"><b>{valueText(metrics.activePoiCount ?? metrics.poiCount)}</b><span>Active nearby places</span></div>
                   <div className="metric"><b>{valueText(metrics.avgRating)}</b><span>Avg rating</span></div>
                   <div className="metric"><b>{valueText(metrics.totalReviews)}</b><span>Total reviews</span></div>
-                  <div className="metric"><b>{valueText(metrics.reviewVelocity)}</b><span>Review velocity/day</span></div>
+                  <div className="metric"><b>{valueText(metrics.areaVisitorsPerDay ?? ((metrics.reviewVelocity || 0) * 1000))}</b><span>Area visitors/day</span></div>
                   <div className="metric"><b>{metrics.activityIndex === undefined ? '—' : `${valueText(metrics.activityIndex)}%`}</b><span>Activity index</span></div>
                 </div>
                 <h3 className="section-title">Top active nearby places</h3>

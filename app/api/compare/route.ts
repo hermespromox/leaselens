@@ -421,6 +421,7 @@ async function analyze(label: 'A' | 'B', input: string, category: string, radius
   const avgRating = ratings.length ? ratings.reduce((a, b) => a + b, 0) / ratings.length : 0;
 
   const reviewVelocity = reviewsInWindow / Math.max(reviewWindowDays, 1);
+  const areaVisitorsPerDay = reviewVelocity * 1000;
   const reviewVelocityPerPlace = reviewVelocity / Math.max(reviewSamplePlaces.length, 1);
   const reviewSampleCapacity = reviewSamplePlaces.length * REVIEWS_PER_PLACE_LIMIT;
   const activityIndex = reviewSampleCapacity
@@ -440,6 +441,7 @@ async function analyze(label: 'A' | 'B', input: string, category: string, radius
     reviewsInWindow,
     reviewSampleCapacity,
     reviewVelocity: Number(reviewVelocity.toFixed(3)),
+    areaVisitorsPerDay: Math.round(areaVisitorsPerDay),
     reviewVelocityPerPlace: Number(reviewVelocityPerPlace.toFixed(3)),
     activityIndex: Number(activityIndex.toFixed(1)),
   };
@@ -478,8 +480,8 @@ export async function POST(req: NextRequest) {
     const winner = A.score === B.score ? 'Tie' : A.score > B.score ? 'A' : 'B';
     const better = winner === 'A' ? A : winner === 'B' ? B : null;
     const summary = better
-      ? `Place ${winner} looks stronger for “${category}”: ${better.metrics.poiCount} active nearby places within 1 km, ${better.metrics.totalReviews.toLocaleString()} total reviews, median ${Math.round(better.metrics.medianReviews).toLocaleString()} reviews per place, average rating ${better.metrics.avgRating.toFixed(2)}, about ${better.metrics.reviewVelocity.toFixed(2)} sampled reviews/day, and ${better.metrics.activityIndex.toFixed(1)}% recent review freshness.`
-      : `The two locations are close. Compare active nearby places, total review volume, average rating, median review depth, review velocity and activity index before deciding.`;
+      ? `Place ${winner} looks stronger for “${category}”: ${better.metrics.poiCount} active nearby places within 1 km, ${better.metrics.totalReviews.toLocaleString()} total reviews, median ${Math.round(better.metrics.medianReviews).toLocaleString()} reviews per place, average rating ${better.metrics.avgRating.toFixed(2)}, about ${Math.round(better.metrics.areaVisitorsPerDay).toLocaleString()} estimated area visitors/day, and ${better.metrics.activityIndex.toFixed(1)}% recent review freshness.`
+      : `The two locations are close. Compare active nearby places, total review volume, average rating, median review depth, estimated area visitors and activity index before deciding.`;
 
     const result: ComparisonResult = {
       winner,

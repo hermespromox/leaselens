@@ -74,11 +74,11 @@ function SideCard({ side }: { side: Side }) {
         <Metric label="Active nearby places" value={side.metrics.activePoiCount ?? side.metrics.poiCount ?? 0} />
         <Metric label="Avg rating" value={(side.metrics.avgRating ?? 0).toFixed(2)} />
         <Metric label="Total reviews" value={Math.round(side.metrics.totalReviews ?? 0).toLocaleString()} />
-        <Metric label="Review velocity" value={(side.metrics.reviewVelocity ?? 0).toFixed(2)} suffix="/day" />
+        <Metric label="Area visitors" value={Math.round(side.metrics.areaVisitorsPerDay ?? (side.metrics.reviewVelocity ?? 0) * 1000).toLocaleString()} suffix="/day" />
         <Metric label="Median reviews" value={Math.round(side.metrics.medianReviews ?? 0).toLocaleString()} />
         <Metric label="Activity index" value={(side.metrics.activityIndex ?? 0).toFixed(1)} suffix="%" />
       </div>
-      <p className="notice">Active nearby places only counts POIs within 1 km that have at least 50 reviews. Review velocity and Activity index use those active places only, and Activity index is included in the final score.</p>
+      <p className="notice">Area visitors is estimated as review velocity × 1,000. Active nearby places only counts POIs within 1 km that have at least 50 reviews. Activity index is included in the final score.</p>
       <h3 className="section-title">Top active nearby places</h3>
       {displayedPlaces.length ? displayedPlaces.slice(0, 5).map((p) => (
         <div className="place" key={`${side.label}-${p.name}-${p.full_address}`}>
@@ -103,10 +103,10 @@ const customers = ['Local brokers', 'Franchise teams', 'Retail founders', 'Hospi
 const methodSteps = [
   ['We scan active nearby places', 'For each address, LeaseLens pulls points of interest matching your chosen category, then counts only places within 1 km with at least 50 reviews.'],
   ['We sample the newest reviews', 'The most-reviewed nearby places are sampled for their most recent review timestamps to gauge current activity, not just historical volume.'],
-  ['We score and compare', 'Active place density, rating quality, review depth, recent velocity and Activity index are combined into one score per address so you can see which location wins, and why.'],
+  ['We score and compare', 'Active place density, rating quality, review depth, estimated area visitors and Activity index are combined into one score per address so you can see which location wins, and why.'],
 ];
 const tiers = [
-  ['Starter', '€49', 'One-off location checks', ['10 comparisons', 'Active POI density', 'Review velocity', 'Report view'], false],
+  ['Starter', '€49', 'One-off location checks', ['10 comparisons', 'Active POI density', 'Area visitors/day', 'Report view'], false],
   ['Pro', '€149', 'For brokers and operators', ['100 comparisons', 'Up to 500 POIs/search', 'Recent comments', 'Saved history'], true],
   ['Studio', 'Custom', 'For teams and APIs', ['Team workspace', 'Bulk address lists', 'White-label reports', 'Custom data providers'], false],
 ];
@@ -172,7 +172,7 @@ export default function Home() {
         <div className="hero-copy">
           <div className="eyebrow">Location intelligence for lease decisions</div>
           <h1>Compare two addresses before you sign.</h1>
-          <p className="sub">LeaseLens turns nearby POIs, ratings, review volume and recent comment velocity into a clean A/B location report for founders, brokers and franchise teams.</p>
+          <p className="sub">LeaseLens turns nearby POIs, ratings, review volume and estimated area visitors into a clean A/B location report for founders, brokers and franchise teams.</p>
           <div className="hero-actions">
             <a className="primary-link" href="#compare">Run a comparison</a>
             <a className="secondary-link" href="#pricing">See pricing</a>
@@ -265,7 +265,7 @@ export default function Home() {
         <div className="feature-grid">
           <div className="feature">
             <span className="feature-icon material-symbols-outlined" aria-hidden="true">query_stats</span>
-            <b>Demand proxy</b><span>Total reviews and review velocity show where customers are active now.</span>
+            <b>Demand proxy</b><span>Total reviews and estimated area visitors show where customers are active now.</span>
           </div>
           <div className="feature">
             <span className="feature-icon material-symbols-outlined" aria-hidden="true">storefront</span>

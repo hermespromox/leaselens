@@ -47,12 +47,13 @@ export default async function HistoryDetailPage({ params }: { params: { id: stri
                 </div>
                 <p className="notice">{valueText(location.latitude)}, {valueText(location.longitude)}</p>
                 <div className="metrics">
-                  <div className="metric"><b>{valueText(metrics.poiCount)}</b><span>Nearby places</span></div>
+                  <div className="metric"><b>{valueText(metrics.activePoiCount ?? metrics.poiCount)}</b><span>Active nearby places</span></div>
                   <div className="metric"><b>{valueText(metrics.avgRating)}</b><span>Avg rating</span></div>
                   <div className="metric"><b>{valueText(metrics.totalReviews)}</b><span>Total reviews</span></div>
                   <div className="metric"><b>{valueText(metrics.reviewVelocity)}</b><span>Review velocity/day</span></div>
+                  <div className="metric"><b>{metrics.activityIndex === undefined ? '—' : `${valueText(metrics.activityIndex)}%`}</b><span>Activity index</span></div>
                 </div>
-                <h3 className="section-title">Top nearby places</h3>
+                <h3 className="section-title">Top active nearby places</h3>
                 {topPlaces.slice(0, 5).map((place: any) => (
                   <div className="place" key={`${location.label}-${place.name}-${place.full_address || ''}`}>
                     <strong>{place.place_link ? <a href={place.place_link} target="_blank">{place.name}</a> : place.name}</strong>

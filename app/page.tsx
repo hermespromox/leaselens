@@ -71,22 +71,22 @@ function SideCard({ side }: { side: Side }) {
       </div>
       <p className="notice">{side.coordinates.lat.toFixed(5)}, {side.coordinates.lng.toFixed(5)}</p>
       <div className="metrics">
-        <Metric label="Nearby places" value={side.metrics.poiCount ?? 0} />
+        <Metric label="Active nearby places" value={side.metrics.activePoiCount ?? side.metrics.poiCount ?? 0} />
         <Metric label="Avg rating" value={(side.metrics.avgRating ?? 0).toFixed(2)} />
         <Metric label="Total reviews" value={Math.round(side.metrics.totalReviews ?? 0).toLocaleString()} />
         <Metric label="Review velocity" value={(side.metrics.reviewVelocity ?? 0).toFixed(2)} suffix="/day" />
         <Metric label="Median reviews" value={Math.round(side.metrics.medianReviews ?? 0).toLocaleString()} />
         <Metric label="Activity index" value={(side.metrics.activityIndex ?? 0).toFixed(1)} suffix="%" />
       </div>
-      <p className="notice">Review velocity and Activity index use a fixed 7-day recent window. Activity index is the share of the newest review sample that falls inside those 7 days.</p>
-      <h3 className="section-title">Top nearby places</h3>
+      <p className="notice">Active nearby places only counts POIs with at least 50 reviews. Review velocity and Activity index use a fixed 7-day recent window, and Activity index is now included in the final score.</p>
+      <h3 className="section-title">Top active nearby places</h3>
       {displayedPlaces.length ? displayedPlaces.slice(0, 5).map((p) => (
         <div className="place" key={`${side.label}-${p.name}-${p.full_address}`}>
           <strong>{p.place_link ? <a href={p.place_link} target="_blank">{p.name}</a> : p.name}</strong>
           <small>{p.rating ?? '—'} ★ · {(p.review_count ?? 0).toLocaleString()} reviews{displayDistance(p.distanceMeters) ? ` · ${displayDistance(p.distanceMeters)} away` : ''}</small>
           <small>{p.full_address}</small>
         </div>
-      )) : <p className="notice">No displayed nearby places within 1 km of this address.</p>}
+      )) : <p className="notice">No active nearby places with at least 50 reviews within 1 km of this address.</p>}
       <h3 className="section-title">Newest reviews sampled</h3>
       <div className="comments">
         {displayedComments.length ? displayedComments.slice(0, 5).map((c, i) => (
@@ -101,12 +101,12 @@ function SideCard({ side }: { side: Side }) {
 
 const customers = ['Local brokers', 'Franchise teams', 'Retail founders', 'Hospitality groups', 'SEO agencies'];
 const methodSteps = [
-  ['We scan nearby places', 'For each address, LeaseLens pulls every point of interest matching your chosen category within walking distance.'],
+  ['We scan active nearby places', 'For each address, LeaseLens pulls points of interest matching your chosen category, then counts only active places with at least 50 reviews.'],
   ['We sample the newest reviews', 'The most-reviewed nearby places are sampled for their most recent review timestamps to gauge current activity, not just historical volume.'],
-  ['We score and compare', 'Density, rating quality, review depth and recent velocity are combined into one score per address so you can see which location wins, and why.'],
+  ['We score and compare', 'Active place density, rating quality, review depth, recent velocity and Activity index are combined into one score per address so you can see which location wins, and why.'],
 ];
 const tiers = [
-  ['Starter', '€49', 'One-off location checks', ['10 comparisons', 'POI density', 'Review velocity', 'Report view'], false],
+  ['Starter', '€49', 'One-off location checks', ['10 comparisons', 'Active POI density', 'Review velocity', 'Report view'], false],
   ['Pro', '€149', 'For brokers and operators', ['100 comparisons', 'Up to 500 POIs/search', 'Recent comments', 'Saved history'], true],
   ['Studio', 'Custom', 'For teams and APIs', ['Team workspace', 'Bulk address lists', 'White-label reports', 'Custom data providers'], false],
 ];
@@ -219,7 +219,7 @@ export default function Home() {
             <div>
               <p className="kicker">Live scan running</p>
               <h3>Charging the location signal…</h3>
-              <p className="notice">This usually takes a few seconds while LeaseLens fetches nearby places and newest review timestamps.</p>
+              <p className="notice">This usually takes a few seconds while LeaseLens fetches active nearby places and newest review timestamps.</p>
             </div>
             <div className="charge-track large"><span /></div>
           </div>
@@ -259,7 +259,7 @@ export default function Home() {
         <div>
           <p className="kicker">Product</p>
           <h2>From map noise to lease signal.</h2>
-          <p className="subtle">Use local POI density, customer activity and review depth to defend a site recommendation before the lease is signed.</p>
+          <p className="subtle">Use active local POI density, customer activity and review depth to defend a site recommendation before the lease is signed.</p>
           <a className="secondary-link" href="#compare" style={{ marginTop: 22 }}>Try it on your own addresses</a>
         </div>
         <div className="feature-grid">

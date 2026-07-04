@@ -57,6 +57,8 @@ const REVIEW_SAMPLE_PLACE_LIMIT = 10;
 const REVIEWS_PER_PLACE_LIMIT = 20;
 const REVIEW_WINDOW_DAYS = 7;
 const MAX_429_RETRIES = 3;
+const ACTIVE_PLACE_MIN_REVIEWS = 50;
+const MAPS_NEARBY_ZOOM = 15;
 
 function rapidKey() {
   const key = process.env.RAPIDAPI_KEY || process.env.RAPID_MAPS_KEY;
@@ -332,14 +334,6 @@ async function geocode(input: string, country: string): Promise<Coordinates> {
   return { lat, lng };
 }
 
-function zoomForRadius(radius: number) {
-  if (radius <= 300) return 16;
-  if (radius <= 500) return 15;
-  if (radius <= 900) return 14;
-  if (radius <= 1500) return 13;
-  return 12;
-}
-
 function median(nums: number[]) {
   if (!nums.length) return 0;
   const sorted = [...nums].sort((a, b) => a - b);
@@ -355,12 +349,13 @@ function daysSince(dateString?: string) {
 }
 
 function score(metrics: Record<string, number>) {
-  const densityScore = Math.min(metrics.poiCount / 180, 1) * 28;
-  const volumeScore = Math.min(metrics.totalReviews / 60000, 1) * 30;
-  const reviewDepthScore = Math.min(metrics.medianReviews / 450, 1) * 14;
+  const densityScore = Math.min(metrics.poiCount / 180, 1) * 24;
+  const volumeScore = Math.min(metrics.totalReviews / 60000, 1) * 26;
+  const reviewDepthScore = Math.min(metrics.medianReviews / 450, 1) * 12;
   const qualityScore = Math.min(Math.max((metrics.avgRating - 4.0) / 0.8, 0), 1) * 18;
   const velocityScore = Math.min(metrics.reviewVelocity / 0.8, 1) * 10;
-  return Math.round(densityScore + volumeScore + reviewDepthScore + qualityScore + velocityScore);
+  const activityScore = Math.min(metrics.activityIndex / 100, 1) * 10;
+  return Math.round(densityScore + volumeScore + reviewDepthScore + qualityScore + velocityScore + activityScore);
 }
 
 async function getReviews(place: NearbyPlace, country: string, windowDays: number) {
@@ -390,12 +385,13 @@ async function analyze(label: 'A' | 'B', input: string, category: string, radius
     country,
     lang: 'en',
     offset: 0,
-    zoom: zoomForRadius(radiusMeters),
+    zoom: MAPS_NEARBY_ZOOM,
   });
   const places: NearbyPlace[] = (nearby?.data || [])
     .filter((p: NearbyPlace) => p?.business_id)
     .map((p: NearbyPlace) => withDistance(p, coordinates));
-  const reviewSamplePlaces = [...places]
+  const activePlaces = places.filter((p) => Number(p.review_count || 0) >= ACTIVE_PLACE_MIN_REVIEWS);
+  const reviewSamplePlaces = [...activePlaces]
     .sort((a, b) => (b.review_count || 0) - (a.review_count || 0))
     .slice(0, REVIEW_SAMPLE_PLACE_LIMIT);
 
@@ -413,8 +409,8 @@ async function analyze(label: 'A' | 'B', input: string, category: string, radius
       }));
   }).sort((a, b) => (new Date(b.date || 0).getTime()) - (new Date(a.date || 0).getTime()));
 
-  const ratings = places.map((p) => Number(p.rating)).filter(Number.isFinite);
-  const reviewCounts = places.map((p) => Number(p.review_count || 0));
+  const ratings = activePlaces.map((p) => Number(p.rating)).filter(Number.isFinite);
+  const reviewCounts = activePlaces.map((p) => Number(p.review_count || 0));
   const reviewsInWindow = reviewResults.reduce((sum, r) => sum + r.inWindow, 0);
   const totalReviews = reviewCounts.reduce((a, b) => a + b, 0);
   const avgRating = ratings.length ? ratings.reduce((a, b) => a + b, 0) / ratings.length : 0;
@@ -427,7 +423,10 @@ async function analyze(label: 'A' | 'B', input: string, category: string, radius
     : 0;
 
   const metrics = {
-    poiCount: places.length,
+    poiCount: activePlaces.length,
+    activePoiCount: activePlaces.length,
+    rawPoiCount: places.length,
+    activePlaceMinReviews: ACTIVE_PLACE_MIN_REVIEWS,
     avgRating: Number(avgRating.toFixed(3)),
     medianRating: Number(median(ratings).toFixed(3)),
     totalReviews,
@@ -445,7 +444,7 @@ async function analyze(label: 'A' | 'B', input: string, category: string, radius
     coordinates,
     score: score(metrics),
     metrics,
-    topPlaces: [...places]
+    topPlaces: [...activePlaces]
       .sort((a, b) => (b.review_count || 0) - (a.review_count || 0))
       .slice(0, 5),
     recentComments: recentComments.slice(0, 20),
@@ -473,8 +472,8 @@ export async function POST(req: NextRequest) {
     const winner = A.score === B.score ? 'Tie' : A.score > B.score ? 'A' : 'B';
     const better = winner === 'A' ? A : winner === 'B' ? B : null;
     const summary = better
-      ? `Place ${winner} looks stronger for “${category}”: ${better.metrics.poiCount} nearby POIs, ${better.metrics.totalReviews.toLocaleString()} total reviews, median ${Math.round(better.metrics.medianReviews).toLocaleString()} reviews per place, average rating ${better.metrics.avgRating.toFixed(2)}, and about ${better.metrics.reviewVelocity.toFixed(2)} sampled reviews/day.`
-      : `The two locations are close. Compare density, total review volume, average rating, median review depth and review velocity before deciding.`;
+      ? `Place ${winner} looks stronger for “${category}”: ${better.metrics.poiCount} active nearby places, ${better.metrics.totalReviews.toLocaleString()} total reviews, median ${Math.round(better.metrics.medianReviews).toLocaleString()} reviews per place, average rating ${better.metrics.avgRating.toFixed(2)}, about ${better.metrics.reviewVelocity.toFixed(2)} sampled reviews/day, and ${better.metrics.activityIndex.toFixed(1)}% recent review freshness.`
+      : `The two locations are close. Compare active nearby places, total review volume, average rating, median review depth, review velocity and activity index before deciding.`;
 
     const result: ComparisonResult = {
       winner,

@@ -10,6 +10,9 @@ type Place = {
   website?: string | null;
   full_address?: string;
   place_link?: string;
+  latitude?: number;
+  longitude?: number;
+  distanceMeters?: number;
 };
 
 type Side = {
@@ -19,7 +22,7 @@ type Side = {
   score: number;
   metrics: Record<string, number>;
   topPlaces: Place[];
-  recentComments: { place: string; rating?: number; date?: string; text: string }[];
+  recentComments: { place: string; rating?: number; date?: string; text: string; distanceMeters?: number }[];
 };
 
 type Result = {
@@ -42,7 +45,21 @@ function Metric({ label, value, suffix = '' }: { label: string; value: number | 
   );
 }
 
+const DISPLAY_DISTANCE_LIMIT_METERS = 1000;
+
+function displayDistance(meters?: number) {
+  if (!Number.isFinite(meters)) return null;
+  return meters! >= 1000 ? `${(meters! / 1000).toFixed(1)} km` : `${Math.round(meters!)} m`;
+}
+
+function withinDisplayDistance(meters?: number) {
+  return !Number.isFinite(meters) || meters! <= DISPLAY_DISTANCE_LIMIT_METERS;
+}
+
 function SideCard({ side }: { side: Side }) {
+  const displayedPlaces = side.topPlaces.filter((p) => withinDisplayDistance(p.distanceMeters));
+  const displayedComments = side.recentComments.filter((c) => withinDisplayDistance(c.distanceMeters));
+
   return (
     <div className="panel result-card">
       <div className="place-title">
@@ -63,20 +80,20 @@ function SideCard({ side }: { side: Side }) {
       </div>
       <p className="notice">Review velocity and Activity index use a fixed 7-day recent window. Activity index is the share of the newest review sample that falls inside those 7 days.</p>
       <h3 className="section-title">Top nearby places</h3>
-      {side.topPlaces.slice(0, 5).map((p) => (
+      {displayedPlaces.length ? displayedPlaces.slice(0, 5).map((p) => (
         <div className="place" key={`${side.label}-${p.name}-${p.full_address}`}>
           <strong>{p.place_link ? <a href={p.place_link} target="_blank">{p.name}</a> : p.name}</strong>
-          <small>{p.rating ?? '—'} ★ · {(p.review_count ?? 0).toLocaleString()} reviews</small>
+          <small>{p.rating ?? '—'} ★ · {(p.review_count ?? 0).toLocaleString()} reviews{displayDistance(p.distanceMeters) ? ` · ${displayDistance(p.distanceMeters)} away` : ''}</small>
           <small>{p.full_address}</small>
         </div>
-      ))}
+      )) : <p className="notice">No displayed nearby places within 1 km of this address.</p>}
       <h3 className="section-title">Newest reviews sampled</h3>
       <div className="comments">
-        {side.recentComments.length ? side.recentComments.slice(0, 5).map((c, i) => (
+        {displayedComments.length ? displayedComments.slice(0, 5).map((c, i) => (
           <div className="comment" key={i}>
-            <strong>{c.place}</strong> · {c.rating ?? '—'} ★ · {c.date || 'recent'}
+            <strong>{c.place}</strong> · {c.rating ?? '—'} ★ · {c.date || 'recent'}{displayDistance(c.distanceMeters) ? ` · ${displayDistance(c.distanceMeters)} away` : ''}
           </div>
-        )) : <p className="notice">No recent review timestamps returned by the provider for sampled places.</p>}
+        )) : <p className="notice">No recent review timestamps returned by displayed places within 1 km.</p>}
       </div>
     </div>
   );

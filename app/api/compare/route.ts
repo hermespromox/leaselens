@@ -13,6 +13,7 @@ type NearbyPlace = {
   full_address?: string;
   latitude?: number;
   longitude?: number;
+  distanceMeters?: number;
   rating?: number;
   review_count?: number;
   website?: string | null;
@@ -31,7 +32,7 @@ type AnalyzedSide = {
   score: number;
   metrics: Record<string, number>;
   topPlaces: NearbyPlace[];
-  recentComments: Array<{ place: string; rating?: number; date?: string; text: string }>;
+  recentComments: Array<{ place: string; rating?: number; date?: string; text: string; distanceMeters?: number }>;
 };
 type ComparisonResult = {
   winner: string;
@@ -55,6 +56,7 @@ const BASE = `https://${HOST}`;
 const REVIEW_SAMPLE_PLACE_LIMIT = 10;
 const REVIEWS_PER_PLACE_LIMIT = 20;
 const REVIEW_WINDOW_DAYS = 7;
+const MAX_429_RETRIES = 3;
 
 function rapidKey() {
   const key = process.env.RAPIDAPI_KEY || process.env.RAPID_MAPS_KEY;
@@ -262,19 +264,52 @@ async function rapid(path: string, params: Record<string, string | number | unde
   for (const [key, value] of Object.entries(params)) {
     if (value !== undefined && value !== '') url.searchParams.set(key, String(value));
   }
-  const res = await fetch(url.toString(), {
-    headers: {
-      'x-rapidapi-key': rapidKey(),
-      'x-rapidapi-host': HOST,
-      'Content-Type': 'application/json',
-    },
-    cache: 'no-store',
-  });
-  const text = await res.text();
-  let data: any;
-  try { data = JSON.parse(text); } catch { data = { error: text.slice(0, 300) }; }
-  if (!res.ok) throw new Error(`Maps API ${res.status}: ${data?.message || data?.error || 'request failed'}`);
-  return data;
+  for (let attempt = 0; attempt <= MAX_429_RETRIES; attempt += 1) {
+    const res = await fetch(url.toString(), {
+      headers: {
+        'x-rapidapi-key': rapidKey(),
+        'x-rapidapi-host': HOST,
+        'Content-Type': 'application/json',
+      },
+      cache: 'no-store',
+    });
+    const text = await res.text();
+    let data: any;
+    try { data = JSON.parse(text); } catch { data = { error: text.slice(0, 300) }; }
+    if (res.ok) return data;
+    if (res.status === 429 && attempt < MAX_429_RETRIES) {
+      const retryAfter = Number(res.headers.get('retry-after'));
+      const waitMs = Number.isFinite(retryAfter) && retryAfter > 0
+        ? retryAfter * 1000
+        : 650 * (attempt + 1);
+      await sleep(waitMs);
+      continue;
+    }
+    throw new Error(`Maps API ${res.status}: ${data?.message || data?.error || 'request failed'}`);
+  }
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function distanceMeters(a: Coordinates, b: Coordinates) {
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const earthRadiusMeters = 6371000;
+  const dLat = toRad(b.lat - a.lat);
+  const dLng = toRad(b.lng - a.lng);
+  const lat1 = toRad(a.lat);
+  const lat2 = toRad(b.lat);
+  const h = Math.sin(dLat / 2) ** 2
+    + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+  return Math.round(2 * earthRadiusMeters * Math.asin(Math.sqrt(h)));
+}
+
+function withDistance(place: NearbyPlace, center: Coordinates): NearbyPlace {
+  const lat = Number(place.latitude);
+  const lng = Number(place.longitude);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return place;
+  return { ...place, distanceMeters: distanceMeters(center, { lat, lng }) };
 }
 
 function parseCoordinates(input: string): Coordinates | null {
@@ -357,7 +392,9 @@ async function analyze(label: 'A' | 'B', input: string, category: string, radius
     offset: 0,
     zoom: zoomForRadius(radiusMeters),
   });
-  const places: NearbyPlace[] = (nearby?.data || []).filter((p: NearbyPlace) => p?.business_id);
+  const places: NearbyPlace[] = (nearby?.data || [])
+    .filter((p: NearbyPlace) => p?.business_id)
+    .map((p: NearbyPlace) => withDistance(p, coordinates));
   const reviewSamplePlaces = [...places]
     .sort((a, b) => (b.review_count || 0) - (a.review_count || 0))
     .slice(0, REVIEW_SAMPLE_PLACE_LIMIT);
@@ -372,6 +409,7 @@ async function analyze(label: 'A' | 'B', input: string, category: string, radius
         rating: r.review_rate,
         date: r.iso_date,
         text: (r.review_text || '').slice(0, 260),
+        distanceMeters: place.distanceMeters,
       }));
   }).sort((a, b) => (new Date(b.date || 0).getTime()) - (new Date(a.date || 0).getTime()));
 

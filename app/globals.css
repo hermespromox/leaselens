@@ -63,10 +63,12 @@ button:focus-visible, a:focus-visible { outline-offset: 2px; }
 .hero-copy { display: grid; gap: 20px; }
 .eyebrow, .kicker { color: var(--accent-dark); font-weight: 800; letter-spacing: .12em; text-transform: uppercase; font-size: 12px; margin: 0; }
 h1, h2, h3, p { margin-top: 0; }
-h1 { font-size: clamp(42px, 7vw, 80px); line-height: .92; letter-spacing: -0.07em; margin-bottom: 0; max-width: 800px; }
+h1 { font-size: clamp(38px, 6vw, 68px); line-height: .94; letter-spacing: -0.065em; margin-bottom: 0; max-width: 760px; }
 h2 { font-size: clamp(32px, 4vw, 56px); line-height: .95; letter-spacing: -0.06em; margin-bottom: 14px; }
 h3 { letter-spacing: -0.03em; margin-bottom: 8px; }
-.sub { color: var(--muted); max-width: 680px; font-size: 21px; line-height: 1.55; font-weight: 480; }
+.sub { color: var(--muted); max-width: 650px; font-size: 19px; line-height: 1.5; font-weight: 480; }
+.hero h1 { font-size: clamp(38px, 5.5vw, 64px); max-width: 700px; }
+.hero .sub { font-size: 18px; line-height: 1.5; max-width: 610px; }
 .subtle { color: var(--muted); font-size: 18px; line-height: 1.6; max-width: 560px; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; }
 .primary-link, .secondary-link, button.primary {

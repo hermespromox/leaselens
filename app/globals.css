@@ -226,15 +226,15 @@ ul { padding-left: 20px; color: #3d4651; line-height: 1.9; }
 .compact-actions { margin-top: 14px; }
 .workspace-shell { padding: 54px 0 84px; display: grid; gap: 20px; }
 .workspace-hero { padding: 28px; display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: center; }
-.workspace-hero h1 { font-size: clamp(42px, 7vw, 76px); }
+.workspace-hero h1 { font-size: clamp(34px, 5vw, 54px); }
 .workspace-profile { display: grid; gap: 12px; justify-items: end; min-width: min(330px, 100%); overflow-wrap: anywhere; }
 .status-pill { border-radius: 999px; background: #e8fff7; border: 1px solid rgba(8,127,91,.22); color: var(--green); padding: 8px 11px; font-size: 12px; font-weight: 850; text-transform: uppercase; letter-spacing: .08em; }
 .workspace-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
 .workspace-main { display: grid; grid-template-columns: 1.35fr .65fr; gap: 14px; align-items: start; }
 .workspace-card { padding: 22px; box-shadow: none; display: grid; gap: 16px; }
 .stat-card span { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; font-weight: 850; }
-.stat-card strong { font-size: clamp(42px, 6vw, 68px); letter-spacing: -0.07em; line-height: .9; }
-.stat-card .small-stat { font-size: clamp(22px, 3vw, 34px); line-height: 1.05; }
+.stat-card strong { font-size: clamp(34px, 4.5vw, 52px); letter-spacing: -0.06em; line-height: .95; }
+.stat-card .small-stat { font-size: clamp(18px, 2vw, 24px); line-height: 1.2; letter-spacing: -0.04em; }
 .stat-card p { color: var(--muted); line-height: 1.45; margin: 0; }
 .card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
 .card-head h2 { margin-bottom: 0; }
@@ -244,6 +244,36 @@ ul { padding-left: 20px; color: #3d4651; line-height: 1.9; }
 .mini-report span, .mini-report small { color: var(--muted); font-size: 12px; }
 .mini-report strong { line-height: 1.25; }
 .compact-empty { min-height: 220px; }
+.account-shell { gap: 16px; }
+.account-page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; padding: 8px 2px 4px; }
+.account-page-head h1 { font-size: clamp(34px, 5vw, 54px); line-height: 1; margin: 6px 0 8px; max-width: none; }
+.account-page-head .subtle { font-size: 15px; line-height: 1.55; max-width: 620px; margin: 0; }
+.account-layout { display: grid; grid-template-columns: minmax(260px, 340px) 1fr; gap: 16px; align-items: start; }
+.account-side-card { padding: 20px; box-shadow: none; display: grid; gap: 16px; position: sticky; top: 88px; }
+.account-identity { display: flex; gap: 12px; align-items: flex-start; padding-bottom: 14px; border-bottom: 1px solid var(--line); min-width: 0; }
+.account-identity strong { display: block; font-size: 15px; line-height: 1.35; overflow-wrap: anywhere; margin-top: 4px; }
+.account-avatar { width: 34px; height: 34px; border-radius: 12px; background: var(--soft); color: var(--accent-dark); display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; font-size: 16px; }
+.account-status-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; border: 1px solid var(--line); border-radius: 16px; padding: 12px; background: #fff; }
+.account-status-row span { color: var(--muted); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .07em; }
+.account-status-row strong:not(.status-pill) { font-size: 14px; }
+.compact-status { padding: 5px 9px; font-size: 11px; letter-spacing: .06em; }
+.account-actions-list { display: grid; gap: 9px; margin-top: 2px; }
+.account-actions-list .secondary-link, .account-logout { width: 100%; min-height: 42px; padding: 11px 14px; }
+.account-actions-list form { margin: 0; }
+.account-content { display: grid; gap: 16px; min-width: 0; }
+.account-stat-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.account-stat-card { padding: 18px; gap: 10px; border-radius: 22px; }
+.account-stat-card strong { font-size: clamp(28px, 3.5vw, 42px); }
+.account-stat-card .small-stat { font-size: clamp(16px, 1.6vw, 20px); letter-spacing: -0.03em; }
+.account-reports-card { padding: 20px; border-radius: 24px; }
+.account-card-head h2 { font-size: clamp(24px, 3vw, 34px); line-height: 1.05; }
+.account-mini-history .mini-report { grid-template-columns: 150px 1fr auto; align-items: center; gap: 14px; padding: 13px 14px; }
+.account-mini-history .mini-report span { font-size: 11px; line-height: 1.35; }
+.account-mini-history .mini-report strong { font-size: 14px; min-width: 0; }
+.account-mini-history .mini-report small { text-align: right; white-space: nowrap; }
+.account-empty { min-height: 180px; text-align: left; place-items: start; align-items: center; }
+.account-empty h3 { font-size: 22px; margin-bottom: 6px; }
+.account-empty .primary-link { margin-top: 14px; }
 .footer { display: flex; justify-content: space-between; gap: 24px; border-top: 1px solid var(--line); padding: 32px 0 44px; color: var(--muted); flex-wrap: wrap; }
 .footer strong { color: var(--ink); display: block; margin-bottom: 4px; }
 .footer-brand p { margin: 6px 0 0; max-width: 300px; font-size: 13px; line-height: 1.5; }
@@ -270,9 +300,12 @@ ul { padding-left: 20px; color: #3d4651; line-height: 1.9; }
   .charge-track span { width: 68%; transform: none; }
 }
 @media (max-width: 940px) {
-  .hero, .section-grid, .columns, .pricing-grid, .testimonial-grid, .method-grid, .history-row, .workspace-hero, .workspace-grid, .workspace-main { grid-template-columns: 1fr; }
-  .history-head, .card-head { align-items: start; flex-direction: column; }
+  .hero, .section-grid, .columns, .pricing-grid, .testimonial-grid, .method-grid, .history-row, .workspace-hero, .workspace-grid, .workspace-main, .account-layout, .account-stat-grid { grid-template-columns: 1fr; }
+  .history-head, .card-head, .account-page-head { align-items: start; flex-direction: column; }
   .history-score, .workspace-profile { text-align: left; justify-items: start; }
+  .account-side-card { position: static; }
+  .account-mini-history .mini-report { grid-template-columns: 1fr; align-items: start; }
+  .account-mini-history .mini-report small { text-align: left; white-space: normal; }
   .hero { padding-top: 40px; }
 }
 @media (max-width: 560px) {

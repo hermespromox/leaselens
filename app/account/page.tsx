@@ -23,81 +23,91 @@ export default async function AccountPage({ searchParams }: { searchParams: { er
     <main>
       <NavBar active="account" variant="app" />
 
-      <section className="shell workspace-shell">
-        <div className="workspace-hero panel">
+      <section className="shell workspace-shell account-shell">
+        <div className="account-page-head">
           <div>
-            <p className="kicker">Private workspace</p>
-            <h1>Welcome back.</h1>
-            <p className="subtle">Your confirmed LeaseLens account stores every comparison you run while signed in.</p>
+            <p className="kicker">Account</p>
+            <h1>Your workspace</h1>
+            <p className="subtle">Manage your confirmed account and quickly return to saved LeaseLens reports.</p>
           </div>
-          <div className="workspace-profile">
-            <span className="status-pill">Email confirmed</span>
-            <strong>{user.email}</strong>
-            <form action={logoutAction}><button className="primary">Log out</button></form>
-          </div>
+          <Link className="primary-link" href="/#compare">New comparison</Link>
         </div>
 
         {searchParams.message && <div className="success">{searchParams.message}</div>}
         {searchParams.error && <div className="error">{searchParams.error}</div>}
 
-        <div className="workspace-grid">
-          <div className="panel workspace-card stat-card">
-            <span>Saved reports</span>
-            <strong>{summary.total}</strong>
-            <p>Only reports created while logged in are linked to this workspace.</p>
-          </div>
-          <div className="panel workspace-card stat-card">
-            <span>Last report</span>
-            <strong className="small-stat">{formatDate(summary.last_comparison_at)}</strong>
-            <p>Run a new comparison to update your workspace instantly.</p>
-          </div>
-          <div className="panel workspace-card stat-card">
-            <span>Top category</span>
-            <strong className="small-stat">{summary.top_category || '—'}</strong>
-            <p>Based on your saved comparison history.</p>
-          </div>
-        </div>
-
-        <div className="workspace-main">
-          <div className="panel workspace-card">
-            <div className="card-head">
+        <div className="account-layout">
+          <aside className="panel account-side-card">
+            <div className="account-identity">
+              <span className="account-avatar" aria-hidden="true">●</span>
               <div>
-                <p className="kicker">Recent reports</p>
-                <h2>Your comparison history</h2>
+                <p className="kicker">Signed in as</p>
+                <strong>{user.email}</strong>
               </div>
-              <Link className="secondary-link" href="/history">Open all reports</Link>
             </div>
-            {recent.length ? (
-              <div className="mini-history">
-                {recent.map((item) => (
-                  <Link href={`/history/${item.id}`} className="mini-report" key={item.id}>
-                    <span>{new Date(item.created_at).toLocaleString()}</span>
-                    <strong>{item.place_a} vs {item.place_b}</strong>
-                    <small>{item.category} · Winner {item.winner} · {item.score_a ?? '—'} / {item.score_b ?? '—'}</small>
-                  </Link>
-                ))}
-              </div>
-            ) : (
-              <div className="empty compact-empty">
-                <div>
-                  <h3>No saved reports yet.</h3>
-                  <p className="notice">Start with a comparison while logged in and it will be saved here.</p>
-                  <Link className="primary-link" href="/#compare">Run first comparison</Link>
-                </div>
-              </div>
-            )}
-          </div>
 
-          <div className="panel workspace-card">
-            <p className="kicker">Account controls</p>
-            <h2>Security</h2>
-            <div className="detail-list">
-              <div><span>Email</span><strong>{user.email}</strong></div>
-              <div><span>Status</span><strong>Confirmed account</strong></div>
+            <div className="account-status-row">
+              <span>Email status</span>
+              <strong className="status-pill compact-status">Confirmed</strong>
             </div>
-            <div className="hero-actions">
+            <div className="account-status-row">
+              <span>Workspace access</span>
+              <strong>Enabled</strong>
+            </div>
+
+            <div className="account-actions-list">
               <Link className="secondary-link" href="/update-password">Change password</Link>
-              <Link className="secondary-link" href="/#compare">New comparison</Link>
+              <Link className="secondary-link" href="/history">Open history</Link>
+              <form action={logoutAction}><button className="primary account-logout">Log out</button></form>
+            </div>
+          </aside>
+
+          <div className="account-content">
+            <div className="account-stat-grid">
+              <div className="panel workspace-card stat-card account-stat-card">
+                <span>Saved reports</span>
+                <strong>{summary.total}</strong>
+                <p>Comparisons saved while you are logged in.</p>
+              </div>
+              <div className="panel workspace-card stat-card account-stat-card">
+                <span>Last report</span>
+                <strong className="small-stat">{formatDate(summary.last_comparison_at)}</strong>
+                <p>Most recent saved comparison.</p>
+              </div>
+              <div className="panel workspace-card stat-card account-stat-card">
+                <span>Top category</span>
+                <strong className="small-stat">{summary.top_category || '—'}</strong>
+                <p>Based on saved history.</p>
+              </div>
+            </div>
+
+            <div className="panel workspace-card account-reports-card">
+              <div className="card-head account-card-head">
+                <div>
+                  <p className="kicker">Recent reports</p>
+                  <h2>Latest comparisons</h2>
+                </div>
+                <Link className="secondary-link" href="/history">View all</Link>
+              </div>
+              {recent.length ? (
+                <div className="mini-history account-mini-history">
+                  {recent.map((item) => (
+                    <Link href={`/history/${item.id}`} className="mini-report" key={item.id}>
+                      <span>{new Date(item.created_at).toLocaleString()}</span>
+                      <strong>{item.place_a} vs {item.place_b}</strong>
+                      <small>{item.category} · Winner {item.winner} · Scores {item.score_a ?? '—'} / {item.score_b ?? '—'}</small>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="empty compact-empty account-empty">
+                  <div>
+                    <h3>No saved reports yet</h3>
+                    <p className="notice">Run a comparison while logged in and it will appear here automatically.</p>
+                    <Link className="primary-link" href="/#compare">Run first comparison</Link>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

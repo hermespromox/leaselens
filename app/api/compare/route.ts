@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Pool } from 'pg';
 
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 export const maxDuration = 60;
 
 type Coordinates = { lat: number; lng: number };
@@ -21,6 +23,31 @@ type Review = {
   review_rate?: number;
   review_text?: string;
 };
+type AnalyzedSide = {
+  label: 'A' | 'B';
+  input: string;
+  coordinates: Coordinates;
+  score: number;
+  metrics: Record<string, number>;
+  topPlaces: NearbyPlace[];
+  recentComments: Array<{ place: string; rating?: number; date?: string; text: string }>;
+};
+type ComparisonResult = {
+  winner: string;
+  summary: string;
+  category: string;
+  radiusMeters: number;
+  reviewWindowDays: number;
+  maxResults: number;
+  sides: { A: AnalyzedSide; B: AnalyzedSide };
+};
+
+declare global {
+  // eslint-disable-next-line no-var
+  var leaselensPool: Pool | undefined;
+  // eslint-disable-next-line no-var
+  var leaselensSchemaReady: Promise<void> | undefined;
+}
 
 const HOST = 'maps-data.p.rapidapi.com';
 const BASE = `https://${HOST}`;
@@ -41,7 +68,7 @@ function supabaseConfig() {
   return { url: url.replace(/\/$/, ''), key };
 }
 
-async function saveComparison(criteria: Record<string, unknown>, result: Record<string, unknown>) {
+async function saveComparisonToRest(criteria: Record<string, unknown>, result: Record<string, unknown>) {
   const config = supabaseConfig();
   if (!config) return null;
 
@@ -74,6 +101,153 @@ async function saveComparison(criteria: Record<string, unknown>, result: Record<
     console.warn('Supabase save skipped:', err);
     return null;
   }
+}
+
+function postgresPool() {
+  const connectionString = process.env.LEASELENS_DATABASE_URL || process.env.DATABASE_URL;
+  if (!connectionString) return null;
+  if (!globalThis.leaselensPool) {
+    globalThis.leaselensPool = new Pool({
+      connectionString,
+      max: 1,
+      ssl: { rejectUnauthorized: false },
+    });
+  }
+  return globalThis.leaselensPool;
+}
+
+async function ensureLeaselenseSchema(pool: Pool) {
+  if (!globalThis.leaselensSchemaReady) {
+    globalThis.leaselensSchemaReady = pool.query(`
+      create schema if not exists leaselense;
+
+      create table if not exists leaselense.comparisons (
+        id bigserial primary key,
+        created_at timestamptz not null default now(),
+        place_a text not null,
+        place_b text not null,
+        category text not null,
+        country text not null default 'fr',
+        radius_meters integer not null,
+        review_window_days integer not null,
+        max_results integer not null,
+        winner text not null,
+        summary text not null,
+        score_a integer,
+        score_b integer,
+        result jsonb not null
+      );
+
+      create table if not exists leaselense.comparison_locations (
+        id bigserial primary key,
+        comparison_id bigint not null references leaselense.comparisons(id) on delete cascade,
+        label text not null check (label in ('A', 'B')),
+        input text not null,
+        latitude double precision,
+        longitude double precision,
+        score integer,
+        metrics jsonb not null default '{}'::jsonb,
+        top_places jsonb not null default '[]'::jsonb,
+        recent_comments jsonb not null default '[]'::jsonb,
+        created_at timestamptz not null default now(),
+        unique (comparison_id, label)
+      );
+
+      create table if not exists leaselense.reviews_sampled (
+        id bigserial primary key,
+        comparison_id bigint not null references leaselense.comparisons(id) on delete cascade,
+        location_label text not null check (location_label in ('A', 'B')),
+        place text not null,
+        rating numeric,
+        review_date timestamptz,
+        text_excerpt text,
+        created_at timestamptz not null default now()
+      );
+
+      create index if not exists comparisons_created_at_idx on leaselense.comparisons (created_at desc);
+      create index if not exists comparisons_category_idx on leaselense.comparisons (category);
+      create index if not exists comparison_locations_comparison_id_idx on leaselense.comparison_locations (comparison_id);
+      create index if not exists reviews_sampled_comparison_id_idx on leaselense.reviews_sampled (comparison_id);
+    `).then(() => undefined);
+  }
+  return globalThis.leaselensSchemaReady;
+}
+
+async function saveComparisonToPostgres(criteria: Record<string, unknown>, result: ComparisonResult) {
+  const pool = postgresPool();
+  if (!pool) return null;
+  await ensureLeaselenseSchema(pool);
+  const client = await pool.connect();
+  try {
+    await client.query('begin');
+    const comparison = await client.query<{ id: number }>(`
+      insert into leaselense.comparisons (
+        place_a, place_b, category, country, radius_meters, review_window_days, max_results,
+        winner, summary, score_a, score_b, result
+      ) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+      returning id
+    `, [
+      criteria.placeA,
+      criteria.placeB,
+      criteria.category,
+      criteria.country,
+      criteria.radiusMeters,
+      criteria.reviewWindowDays,
+      criteria.maxResults,
+      result.winner,
+      result.summary,
+      result.sides.A.score,
+      result.sides.B.score,
+      JSON.stringify(result),
+    ]);
+    const comparisonId = comparison.rows[0].id;
+
+    for (const side of [result.sides.A, result.sides.B]) {
+      await client.query(`
+        insert into leaselense.comparison_locations (
+          comparison_id, label, input, latitude, longitude, score, metrics, top_places, recent_comments
+        ) values ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+      `, [
+        comparisonId,
+        side.label,
+        side.input,
+        side.coordinates.lat,
+        side.coordinates.lng,
+        side.score,
+        JSON.stringify(side.metrics),
+        JSON.stringify(side.topPlaces),
+        JSON.stringify(side.recentComments),
+      ]);
+
+      for (const review of side.recentComments) {
+        await client.query(`
+          insert into leaselense.reviews_sampled (
+            comparison_id, location_label, place, rating, review_date, text_excerpt
+          ) values ($1,$2,$3,$4,$5,$6)
+        `, [comparisonId, side.label, review.place, review.rating ?? null, review.date || null, review.text || null]);
+      }
+    }
+
+    await client.query('commit');
+    return comparisonId;
+  } catch (err) {
+    await client.query('rollback');
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+async function saveComparison(criteria: Record<string, unknown>, result: ComparisonResult) {
+  try {
+    const comparisonId = await saveComparisonToPostgres(criteria, result);
+    if (comparisonId) return { provider: 'postgres', id: comparisonId };
+  } catch (err) {
+    console.warn('Postgres save skipped:', err);
+  }
+
+  const restId = await saveComparisonToRest(criteria, result as unknown as Record<string, unknown>);
+  return restId ? { provider: 'rest', id: restId } : null;
 }
 
 async function rapid(path: string, params: Record<string, string | number | undefined>) {
@@ -256,7 +430,7 @@ export async function POST(req: NextRequest) {
       ? `Place ${winner} looks stronger for “${category}”: ${better.metrics.poiCount} nearby POIs, ${better.metrics.totalReviews.toLocaleString()} total reviews, median ${Math.round(better.metrics.medianReviews).toLocaleString()} reviews per place, average rating ${better.metrics.avgRating.toFixed(2)}, and about ${better.metrics.reviewVelocity.toFixed(2)} sampled reviews/day.`
       : `The two locations are close. Compare density, total review volume, average rating, median review depth and review velocity before deciding.`;
 
-    const result = {
+    const result: ComparisonResult = {
       winner,
       summary,
       category,
@@ -265,7 +439,7 @@ export async function POST(req: NextRequest) {
       maxResults,
       sides: { A, B },
     };
-    const savedSearchId = await saveComparison({
+    const savedSearch = await saveComparison({
       placeA,
       placeB,
       category,
@@ -278,8 +452,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       ...result,
       storage: {
-        saved: Boolean(savedSearchId),
-        id: savedSearchId,
+        saved: Boolean(savedSearch),
+        id: savedSearch?.id ?? null,
+        provider: savedSearch?.provider ?? null,
       },
     });
   } catch (err) {

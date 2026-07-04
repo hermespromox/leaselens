@@ -243,11 +243,7 @@ export default function Home() {
           <p className="kicker">Product</p>
           <h2>From map noise to lease signal.</h2>
           <p className="subtle">Use local POI density, customer activity and review depth to defend a site recommendation before the lease is signed.</p>
-          <div className="mini-stats">
-            <div><strong>800m</strong><span>Fixed radius for consistent comparisons</span></div>
-            <div><strong>500</strong><span>Max POIs scanned per search</span></div>
-            <div><strong>7d</strong><span>Recent review activity window</span></div>
-          </div>
+          <a className="secondary-link" href="#compare" style={{ marginTop: 22 }}>Try it on your own addresses</a>
         </div>
         <div className="feature-grid">
           <div className="feature">

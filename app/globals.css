@@ -161,10 +161,6 @@ input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 4px r
 .comments { display: grid; gap: 8px; }
 .comment { border-left: 3px solid var(--accent); padding: 9px 11px; background: var(--soft); border-radius: 12px; color: #3b444f; font-size: 13px; line-height: 1.42; }
 .section-grid { display: grid; grid-template-columns: .78fr 1.22fr; gap: 26px; align-items: start; padding: 68px 0; border-top: 1px solid var(--line); }
-.mini-stats { display: grid; gap: 12px; margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); }
-.mini-stats div { display: flex; align-items: baseline; gap: 10px; }
-.mini-stats strong { font-size: 22px; letter-spacing: -0.04em; color: var(--accent-dark); flex-shrink: 0; min-width: 52px; }
-.mini-stats span { color: var(--muted); font-size: 13px; line-height: 1.4; }
 .feature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .feature { background: #fff; border: 1px solid var(--line); border-radius: 22px; padding: 18px; display: grid; gap: 8px; transition: border-color .15s ease, transform .15s ease; }
 .feature:hover { border-color: var(--accent); transform: translateY(-2px); }

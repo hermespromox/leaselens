@@ -21,7 +21,7 @@ export default async function HistoryDetailPage({ params }: { params: { id: stri
 
   return (
     <main>
-      <NavBar active="history" />
+      <NavBar active="history" variant="app" />
       <section className="shell history-shell">
         <Link className="secondary-link back-link" href="/history">← Back to history</Link>
         <div className="panel winner-panel detail-hero">

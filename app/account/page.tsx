@@ -21,7 +21,7 @@ export default async function AccountPage({ searchParams }: { searchParams: { er
 
   return (
     <main>
-      <NavBar active="account" />
+      <NavBar active="account" variant="app" />
 
       <section className="shell workspace-shell">
         <div className="workspace-hero panel">

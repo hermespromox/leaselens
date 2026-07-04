@@ -12,7 +12,7 @@ export default async function HistoryPage() {
 
   return (
     <main>
-      <NavBar active="history" />
+      <NavBar active="history" variant="app" />
       <section className="shell history-shell">
         <div className="history-head">
           <div>

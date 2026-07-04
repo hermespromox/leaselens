@@ -59,6 +59,7 @@ const REVIEW_WINDOW_DAYS = 7;
 const MAX_429_RETRIES = 3;
 const ACTIVE_PLACE_MIN_REVIEWS = 50;
 const MAPS_NEARBY_ZOOM = 15;
+const ACTIVE_PLACE_DISTANCE_LIMIT_METERS = 1000;
 
 function rapidKey() {
   const key = process.env.RAPIDAPI_KEY || process.env.RAPID_MAPS_KEY;
@@ -390,7 +391,11 @@ async function analyze(label: 'A' | 'B', input: string, category: string, radius
   const places: NearbyPlace[] = (nearby?.data || [])
     .filter((p: NearbyPlace) => p?.business_id)
     .map((p: NearbyPlace) => withDistance(p, coordinates));
-  const activePlaces = places.filter((p) => Number(p.review_count || 0) >= ACTIVE_PLACE_MIN_REVIEWS);
+  const activePlaces = places.filter((p) => (
+    Number(p.review_count || 0) >= ACTIVE_PLACE_MIN_REVIEWS
+    && Number.isFinite(p.distanceMeters)
+    && Number(p.distanceMeters) <= ACTIVE_PLACE_DISTANCE_LIMIT_METERS
+  ));
   const reviewSamplePlaces = [...activePlaces]
     .sort((a, b) => (b.review_count || 0) - (a.review_count || 0))
     .slice(0, REVIEW_SAMPLE_PLACE_LIMIT);
@@ -427,6 +432,7 @@ async function analyze(label: 'A' | 'B', input: string, category: string, radius
     activePoiCount: activePlaces.length,
     rawPoiCount: places.length,
     activePlaceMinReviews: ACTIVE_PLACE_MIN_REVIEWS,
+    activePlaceDistanceLimitMeters: ACTIVE_PLACE_DISTANCE_LIMIT_METERS,
     avgRating: Number(avgRating.toFixed(3)),
     medianRating: Number(median(ratings).toFixed(3)),
     totalReviews,
@@ -472,7 +478,7 @@ export async function POST(req: NextRequest) {
     const winner = A.score === B.score ? 'Tie' : A.score > B.score ? 'A' : 'B';
     const better = winner === 'A' ? A : winner === 'B' ? B : null;
     const summary = better
-      ? `Place ${winner} looks stronger for “${category}”: ${better.metrics.poiCount} active nearby places, ${better.metrics.totalReviews.toLocaleString()} total reviews, median ${Math.round(better.metrics.medianReviews).toLocaleString()} reviews per place, average rating ${better.metrics.avgRating.toFixed(2)}, about ${better.metrics.reviewVelocity.toFixed(2)} sampled reviews/day, and ${better.metrics.activityIndex.toFixed(1)}% recent review freshness.`
+      ? `Place ${winner} looks stronger for “${category}”: ${better.metrics.poiCount} active nearby places within 1 km, ${better.metrics.totalReviews.toLocaleString()} total reviews, median ${Math.round(better.metrics.medianReviews).toLocaleString()} reviews per place, average rating ${better.metrics.avgRating.toFixed(2)}, about ${better.metrics.reviewVelocity.toFixed(2)} sampled reviews/day, and ${better.metrics.activityIndex.toFixed(1)}% recent review freshness.`
       : `The two locations are close. Compare active nearby places, total review volume, average rating, median review depth, review velocity and activity index before deciding.`;
 
     const result: ComparisonResult = {

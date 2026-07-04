@@ -78,7 +78,7 @@ function SideCard({ side }: { side: Side }) {
         <Metric label="Median reviews" value={Math.round(side.metrics.medianReviews ?? 0).toLocaleString()} />
         <Metric label="Activity index" value={(side.metrics.activityIndex ?? 0).toFixed(1)} suffix="%" />
       </div>
-      <p className="notice">Active nearby places only counts POIs with at least 50 reviews. Review velocity and Activity index use a fixed 7-day recent window, and Activity index is now included in the final score.</p>
+      <p className="notice">Active nearby places only counts POIs within 1 km that have at least 50 reviews. Review velocity and Activity index use those active places only, and Activity index is included in the final score.</p>
       <h3 className="section-title">Top active nearby places</h3>
       {displayedPlaces.length ? displayedPlaces.slice(0, 5).map((p) => (
         <div className="place" key={`${side.label}-${p.name}-${p.full_address}`}>
@@ -101,7 +101,7 @@ function SideCard({ side }: { side: Side }) {
 
 const customers = ['Local brokers', 'Franchise teams', 'Retail founders', 'Hospitality groups', 'SEO agencies'];
 const methodSteps = [
-  ['We scan active nearby places', 'For each address, LeaseLens pulls points of interest matching your chosen category, then counts only active places with at least 50 reviews.'],
+  ['We scan active nearby places', 'For each address, LeaseLens pulls points of interest matching your chosen category, then counts only places within 1 km with at least 50 reviews.'],
   ['We sample the newest reviews', 'The most-reviewed nearby places are sampled for their most recent review timestamps to gauge current activity, not just historical volume.'],
   ['We score and compare', 'Active place density, rating quality, review depth, recent velocity and Activity index are combined into one score per address so you can see which location wins, and why.'],
 ];

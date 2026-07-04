@@ -1,12 +1,11 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 function origin() {
-  return headers().get('origin') || process.env.NEXT_PUBLIC_SITE_URL || 'https://leaselens-pi.vercel.app';
+  return (process.env.NEXT_PUBLIC_SITE_URL || 'https://leaselens-pi.vercel.app').replace(/\/$/, '');
 }
 
 function redirectWithMessage(path: string, type: 'error' | 'message', message: string): never {

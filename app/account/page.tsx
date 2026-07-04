@@ -28,7 +28,7 @@ export default async function AccountPage({ searchParams }: { searchParams: { er
           <div>
             <p className="kicker">Account</p>
             <h1>Your workspace</h1>
-            <p className="subtle">Manage your confirmed account and quickly return to saved LeaseLens reports.</p>
+            <p className="subtle">Manage your confirmed account and quickly return to saved AskLizy reports.</p>
           </div>
           <Link className="primary-link" href="/#compare">New comparison</Link>
         </div>

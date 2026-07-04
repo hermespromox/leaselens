@@ -147,7 +147,7 @@ function SideCard({ side }: { side: Side }) {
 
 const customers = ['Local brokers', 'Franchise teams', 'Retail founders', 'Hospitality groups', 'SEO agencies'];
 const methodSteps = [
-  ['We scan active nearby places', 'For each address, LeaseLens pulls points of interest matching your chosen category, then counts only places within 1 km with at least 50 reviews.'],
+  ['We scan active nearby places', 'For each address, AskLizy pulls points of interest matching your chosen category, then counts only places within 1 km with at least 50 reviews.'],
   ['We sample the newest reviews', 'The most-reviewed nearby places are sampled for their most recent review timestamps to gauge current activity, not just historical volume.'],
   ['We score and compare', 'Active place density, rating quality, review depth, estimated area visitors and Activity index are combined into one score per address so you can see which location wins, and why.'],
 ];
@@ -217,9 +217,9 @@ export default function Home() {
 
       <section id="top" className="hero shell">
         <div className="hero-copy">
-          <div className="eyebrow">Location intelligence for lease decisions</div>
-          <h1>Compare two addresses before you sign.</h1>
-          <p className="sub">LeaseLens turns nearby POIs, ratings, review volume and estimated area visitors into a clean A/B location report for founders, brokers and franchise teams.</p>
+          <div className="eyebrow">AI location intelligence for lease decisions</div>
+          <h1>Ask Lizy before you sign the lease.</h1>
+          <p className="sub">Compare two addresses and instantly understand footfall signals, nearby competition, reviews, ratings and local demand before committing to a location.</p>
           <div className="hero-actions">
             <a className="primary-link" href="#compare">Run a benchmark</a>
             <a className="secondary-link" href="#pricing">See pricing</a>
@@ -266,7 +266,7 @@ export default function Home() {
             <div>
               <p className="kicker">Live scan running</p>
               <h3>Charging the location signal…</h3>
-              <p className="notice">This usually takes a few seconds while LeaseLens fetches active nearby places and newest review timestamps.</p>
+              <p className="notice">This usually takes a few seconds while AskLizy fetches active nearby places and newest review timestamps.</p>
             </div>
             <div className="charge-track large"><span /></div>
           </div>
@@ -372,14 +372,14 @@ export default function Home() {
       <section id="legal" className="shell legal panel">
         <p className="kicker">Mentions légales</p>
         <h2>Transparent by design.</h2>
-        <p>LeaseLens is a decision-support prototype. It does not provide certified footfall, legal, real-estate or investment advice. Maps and review data are provided through third-party APIs and may be incomplete, delayed or rate-limited. Users should verify critical decisions with site visits, brokers, local market experts and official sources.</p>
+        <p>AskLizy is a decision-support tool. It does not provide certified footfall, legal, real-estate or investment advice. Maps and review data are provided through third-party APIs and may be incomplete, delayed or rate-limited. Users should verify critical decisions with site visits, brokers, local market experts and official sources.</p>
 
       </section>
 
       <footer className="footer shell">
         <div className="footer-brand">
-          <strong>LeaseLens</strong>
-          <p>Compare locations before you sign. Location intelligence for lease decisions, built for brokers, franchise teams and founders.</p>
+          <strong>AskLizy</strong>
+          <p>Ask Lizy before you sign the lease. AI location intelligence for lease decisions, built for brokers, franchise teams and founders.</p>
         </div>
         <div className="footer-links">
           <div className="footer-col">

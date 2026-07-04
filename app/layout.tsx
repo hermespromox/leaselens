@@ -2,8 +2,14 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'LeaseLens — Compare local opportunity',
-  description: 'Minimal location intelligence: compare two addresses by nearby POIs, ratings, reviews and recent activity.',
+  title: 'AskLizy — Ask before you sign the lease',
+  description: 'Compare two addresses using local POIs, reviews, ratings, competition and visitor estimates before signing a lease.',
+  openGraph: {
+    title: 'AskLizy',
+    description: 'AI location intelligence for lease decisions.',
+    url: 'https://asklizy.com',
+    siteName: 'AskLizy',
+  },
   icons: {
     icon: [
       { url: '/favicon.png', type: 'image/png', sizes: '32x32' },

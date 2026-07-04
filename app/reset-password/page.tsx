@@ -4,7 +4,7 @@ import { resetPasswordAction } from '@/app/auth/actions';
 export default function ResetPasswordPage({ searchParams }: { searchParams: { error?: string; message?: string } }) {
   return (
     <main className="auth-shell">
-      <Link className="brand" href="/"><span className="material-symbols-outlined logo-icon">alt_route</span><span>LeaseLens</span></Link>
+      <Link className="brand" href="/"><span className="material-symbols-outlined logo-icon">alt_route</span><span>AskLizy</span></Link>
       <section className="panel auth-card">
         <p className="kicker">Password recovery</p>
         <h1>Reset password</h1>

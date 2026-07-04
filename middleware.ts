@@ -2,6 +2,15 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 export async function middleware(request: NextRequest) {
+  // Redirect old Vercel domain to asklizy.com
+  const host = request.headers.get('host');
+  if (host === 'leaselens-pi.vercel.app') {
+    const url = request.nextUrl.clone();
+    url.hostname = 'asklizy.com';
+    url.protocol = 'https';
+    return NextResponse.redirect(url, 301);
+  }
+
   let response = NextResponse.next({ request });
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;

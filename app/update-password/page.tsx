@@ -9,7 +9,7 @@ export default async function UpdatePasswordPage({ searchParams }: { searchParam
 
   return (
     <main className="auth-shell">
-      <Link className="brand" href="/"><span className="material-symbols-outlined logo-icon">alt_route</span><span>LeaseLens</span></Link>
+      <Link className="brand" href="/"><span className="material-symbols-outlined logo-icon">alt_route</span><span>AskLizy</span></Link>
       <section className="panel auth-card">
         <p className="kicker">Security</p>
         <h1>Update password</h1>

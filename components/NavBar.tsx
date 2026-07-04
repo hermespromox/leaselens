@@ -47,9 +47,9 @@ export default function NavBar({ active, variant = 'marketing' }: { active?: 'co
   return (
     <nav className="nav">
       <div className="nav-inner">
-        <Link className="brand" href="/" aria-label="LeaseLens">
+        <Link className="brand" href="/" aria-label="AskLizy">
           <span aria-hidden="true" className="material-symbols-outlined logo-icon">alt_route</span>
-          <span>LeaseLens</span>
+          <span>AskLizy</span>
         </Link>
 
         <div className="nav-links">

@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 function origin() {
-  return (process.env.NEXT_PUBLIC_SITE_URL || 'https://leaselens-pi.vercel.app').replace(/\/$/, '');
+  return (process.env.NEXT_PUBLIC_SITE_URL || 'https://asklizy.com').replace(/\/$/, '');
 }
 
 function redirectWithMessage(path: string, type: 'error' | 'message', message: string): never {

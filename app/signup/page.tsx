@@ -13,7 +13,7 @@ export default async function SignupPage({ searchParams }: { searchParams: { err
       <section className="panel auth-card">
         <p className="kicker">Start saving reports</p>
         <h1>Create account</h1>
-        <p className="subtle">Keep every comparison in your private history and reopen reports later.</p>
+        <p className="subtle">Keep every benchmark in your private history and reopen reports later.</p>
         {searchParams.message && <div className="success">{searchParams.message}</div>}
         {searchParams.error && <div className="error">{searchParams.error}</div>}
         <form className="form" action={signUpAction}>

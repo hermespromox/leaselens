@@ -13,7 +13,7 @@ export default async function LoginPage({ searchParams }: { searchParams: { erro
       <section className="panel auth-card">
         <p className="kicker">Welcome back</p>
         <h1>Log in</h1>
-        <p className="subtle">Access your saved location comparisons and continue your lease analysis workflow.</p>
+        <p className="subtle">Access your saved location benchmarks and continue your lease analysis workflow.</p>
         {searchParams.message && <div className="success">{searchParams.message}</div>}
         {searchParams.error && <div className="error">{searchParams.error}</div>}
         <form className="form" action={loginAction}>

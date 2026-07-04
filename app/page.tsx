@@ -124,7 +124,7 @@ function SideCard({ side }: { side: Side }) {
         <Metric label="Median reviews" value={Math.round(side.metrics.medianReviews ?? 0).toLocaleString()} />
         <Metric label="Activity index" value={(side.metrics.activityIndex ?? 0).toFixed(1)} suffix="%" />
       </div>
-      <p className="notice">Area visitors is estimated as review velocity × 1,000, rounded up to the nearest 500. Active nearby places only counts POIs within 1 km that have at least 50 reviews. Activity index is included in the final score.</p>
+
       <h3 className="section-title">Top active nearby places</h3>
       {displayedPlaces.length ? displayedPlaces.slice(0, 5).map((p) => (
         <div className="place" key={`${side.label}-${p.name}-${p.full_address}`}>
@@ -152,9 +152,9 @@ const methodSteps = [
   ['We score and compare', 'Active place density, rating quality, review depth, estimated area visitors and Activity index are combined into one score per address so you can see which location wins, and why.'],
 ];
 const tiers = [
-  ['Starter', '€49', 'One-off location checks', ['10 comparisons', 'Active POI density', 'Area visitors/day', 'Report view'], false],
-  ['Pro', '€149', 'For brokers and operators', ['100 comparisons', 'Up to 500 POIs/search', 'Recent comments', 'Saved history'], true],
-  ['Studio', 'Custom', 'For teams and APIs', ['Team workspace', 'Bulk address lists', 'White-label reports', 'Custom data providers'], false],
+  { name: 'Starter', original: '€99', price: '€49', period: '/month', desc: 'One-off location checks', items: ['10 benchmarks', 'Active POI density', 'Area visitors/day', 'Report view'], popular: false },
+  { name: 'Pro', original: '€299', price: '€149', period: '/month', desc: 'For brokers and operators', items: ['100 benchmarks', 'Up to 500 POIs/search', 'Recent comments', 'Saved history'], popular: true },
+  { name: 'Studio', original: '', price: 'Custom', period: '', desc: 'For teams and APIs', items: ['Team workspace', 'Bulk address lists', 'White-label reports', 'Custom data providers'], popular: false },
 ];
 
 const DEFAULT_RADIUS_METERS = 800;
@@ -202,7 +202,7 @@ export default function Home() {
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || 'Comparison failed');
+      if (!res.ok) throw new Error(data?.error || 'Benchmark failed');
       setResult(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unexpected error');
@@ -221,7 +221,7 @@ export default function Home() {
           <h1>Compare two addresses before you sign.</h1>
           <p className="sub">LeaseLens turns nearby POIs, ratings, review volume and estimated area visitors into a clean A/B location report for founders, brokers and franchise teams.</p>
           <div className="hero-actions">
-            <a className="primary-link" href="#compare">Run a comparison</a>
+            <a className="primary-link" href="#compare">Run a benchmark</a>
             <a className="secondary-link" href="#pricing">See pricing</a>
           </div>
           <div className="proof-row">
@@ -243,18 +243,18 @@ export default function Home() {
                 ))}
               </select>
             </label>
-            <p className="notice">Search area is fixed for consistent, apples-to-apples comparisons.</p>
-            <button className="primary" disabled={loading}>{loading ? 'Scanning Maps data…' : 'Compare locations'}</button>
+            <p className="notice">Search area is fixed for consistent, apples-to-apples benchmarks.</p>
+            <button className="primary" disabled={loading}>{loading ? 'Scanning Maps data…' : 'Benchmark locations'}</button>
             {loading && (
               <div className="charge-loader" role="status" aria-live="polite">
                 <div className="charge-copy">
-                  <span>Building comparison</span>
+                  <span>Building benchmark</span>
                   <strong>Scanning places, reviews and activity signals…</strong>
                 </div>
                 <div className="charge-track"><span /></div>
               </div>
             )}
-            <p className="notice">Example Paris restaurant comparison is pre-filled. Scores are decision support, not official footfall measurement. Review sampling stays limited for speed.</p>
+            <p className="notice">Example Paris restaurant benchmark is pre-filled. Scores are decision support, not official footfall measurement.</p>
           </form>
         </div>
       </section>
@@ -274,7 +274,7 @@ export default function Home() {
         {!loading && !result && !error && (
           <div className="panel empty-state">
             <span className="material-symbols-outlined empty-icon" aria-hidden="true">query_stats</span>
-            <h3>No comparison yet</h3>
+            <h3>No benchmark yet</h3>
             <p className="notice">Fill in two addresses above and pick a category — your Place A vs Place B report will appear here in a few seconds.</p>
           </div>
         )}
@@ -289,9 +289,9 @@ export default function Home() {
               <h2>{winnerAddress}</h2>
               <p>{result.summary}</p>
               <p className="notice save-notice">
-                {result.storage?.saved && result.storage.provider === 'postgres'
-                  ? 'Saved. If you are logged in, this report is available in your history.'
-                  : 'Create an account or log in before running a comparison to keep it in your history.'}
+                {result.storage?.saved
+                  ? 'This benchmark is saved to your history.'
+                  : 'Create an account or log in to save benchmarks to your history.'}
               </p>
               <div className="hero-actions compact-actions">
                 <a className="secondary-link" href="/history">Open history</a>
@@ -348,14 +348,20 @@ export default function Home() {
       <section id="pricing" className="shell pricing">
         <div className="center"><p className="kicker">Pricing</p><h2>Start with reports. Scale into a workflow.</h2></div>
         <div className="pricing-grid">
-          {tiers.map(([name, price, desc, items, popular]) => (
-            <div className={`panel tier ${popular ? 'tier-popular' : ''}`} key={name as string}>
-              {popular && <span className="tier-badge">Most popular</span>}
-              <h3>{name}</h3><strong>{price}</strong><p>{desc}</p>
-              <ul>{(items as string[]).map(i => <li key={i}>{i}</li>)}</ul>
+          {tiers.map(tier => (
+            <div className={`panel tier ${tier.popular ? 'tier-popular' : ''}`} key={tier.name}>
+              {tier.popular && <span className="tier-badge">Most popular</span>}
+              <h3>{tier.name}</h3>
+              <div className="tier-price">
+                {tier.original && <span className="tier-original">{tier.original}</span>}
+                <strong>{tier.price}</strong>
+                {tier.period && <small>{tier.period}</small>}
+              </div>
+              <p>{tier.desc}</p>
+              <ul>{tier.items.map(i => <li key={i}>{i}</li>)}</ul>
               <div className="tier-cta">
-                <a className={popular ? 'primary-link' : 'secondary-link'} href="/signup" style={{ width: '100%' }}>
-                  {price === 'Custom' ? 'Contact sales' : `Choose ${name}`}
+                <a className={tier.popular ? 'primary-link' : 'secondary-link'} href="/signup" style={{ width: '100%' }}>
+                  {tier.price === 'Custom' ? 'Contact sales' : `Choose ${tier.name}`}
                 </a>
               </div>
             </div>
@@ -367,7 +373,7 @@ export default function Home() {
         <p className="kicker">Mentions légales</p>
         <h2>Transparent by design.</h2>
         <p>LeaseLens is a decision-support prototype. It does not provide certified footfall, legal, real-estate or investment advice. Maps and review data are provided through third-party APIs and may be incomplete, delayed or rate-limited. Users should verify critical decisions with site visits, brokers, local market experts and official sources.</p>
-        <p>No API key is exposed in the browser; requests run server-side through environment variables.</p>
+
       </section>
 
       <footer className="footer shell">

@@ -6,7 +6,7 @@ import NavBar from '@/components/NavBar';
 
 export default async function HistoryPage() {
   const user = await getCurrentConfirmedUser();
-  if (!user) redirect('/login?message=Log in to view your saved comparisons.');
+  if (!user) redirect('/login?message=Log in to view your saved benchmarks.');
 
   const items = await getComparisonHistory(user.id);
 
@@ -17,10 +17,10 @@ export default async function HistoryPage() {
         <div className="history-head">
           <div>
             <p className="kicker">Your workspace</p>
-            <h1>Comparison history</h1>
-            <p className="subtle">Every comparison you run while logged in is saved here.</p>
+            <h1>Benchmark history</h1>
+            <p className="subtle">Every benchmark you run while logged in is saved here.</p>
           </div>
-          <Link className="primary-link" href="/#compare">Run new comparison</Link>
+          <Link className="primary-link" href="/#compare">Run new benchmark</Link>
         </div>
         {!items.length ? (
           <div className="panel empty history-empty">

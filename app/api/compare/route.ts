@@ -7,6 +7,7 @@ export const runtime = 'nodejs';
 export const maxDuration = 60;
 
 type Coordinates = { lat: number; lng: number };
+type GeocodeResult = { coordinates: Coordinates; displayAddress: string };
 type NearbyPlace = {
   business_id: string;
   name: string;
@@ -28,6 +29,7 @@ type Review = {
 type AnalyzedSide = {
   label: 'A' | 'B';
   input: string;
+  displayAddress: string;
   coordinates: Coordinates;
   score: number;
   metrics: Record<string, number>;
@@ -331,15 +333,20 @@ function parseCoordinates(input: string): Coordinates | null {
   return { lat, lng };
 }
 
-async function geocode(input: string, country: string): Promise<Coordinates> {
+function stringField(value: unknown) {
+  return typeof value === 'string' && value.trim() ? value.trim() : null;
+}
+
+async function geocode(input: string, country: string): Promise<GeocodeResult> {
   const parsed = parseCoordinates(input);
-  if (parsed) return parsed;
+  if (parsed) return { coordinates: parsed, displayAddress: input };
   const data = await rapid('/geocoding.php', { query: input, lang: 'en', country });
   const point = data?.data;
   const lat = Number(point?.lat);
   const lng = Number(point?.lng);
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) throw new Error(`Could not geocode: ${input}`);
-  return { lat, lng };
+  const displayAddress = stringField(point?.full_address) || stringField(point?.formatted_address) || stringField(point?.address) || stringField(point?.name) || input;
+  return { coordinates: { lat, lng }, displayAddress };
 }
 
 function median(nums: number[]) {
@@ -384,7 +391,7 @@ async function getReviews(place: NearbyPlace, country: string, windowDays: numbe
 }
 
 async function analyze(label: 'A' | 'B', input: string, category: string, radiusMeters: number, reviewWindowDays: number, country: string, maxResults: number) {
-  const coordinates = await geocode(input, country);
+  const { coordinates, displayAddress } = await geocode(input, country);
   const nearby = await rapid('/nearby.php', {
     query: category,
     lat: coordinates.lat,
@@ -456,6 +463,7 @@ async function analyze(label: 'A' | 'B', input: string, category: string, radius
   return {
     label,
     input,
+    displayAddress,
     coordinates,
     score: score(metrics),
     metrics,
@@ -488,7 +496,7 @@ export async function POST(req: NextRequest) {
     const winner = A.score === B.score ? 'Tie' : A.score > B.score ? 'A' : 'B';
     const better = winner === 'A' ? A : winner === 'B' ? B : null;
     const summary = better
-      ? `Place ${winner} looks stronger for “${category}”: ${better.metrics.poiCount} active nearby places within 1 km, ${better.metrics.totalReviews.toLocaleString()} total reviews, median ${Math.round(better.metrics.medianReviews).toLocaleString()} reviews per place, average rating ${better.metrics.avgRating.toFixed(2)}, about ${Math.round(better.metrics.areaVisitorsPerDay).toLocaleString()} estimated area visitors/day, and ${better.metrics.activityIndex.toFixed(1)}% recent review freshness.`
+      ? `${better.displayAddress || better.input} looks stronger for “${category}”: ${better.metrics.poiCount} active nearby places within 1 km, ${better.metrics.totalReviews.toLocaleString()} total reviews, median ${Math.round(better.metrics.medianReviews).toLocaleString()} reviews per place, average rating ${better.metrics.avgRating.toFixed(2)}, about ${Math.round(better.metrics.areaVisitorsPerDay).toLocaleString()} estimated area visitors/day, and ${better.metrics.activityIndex.toFixed(1)}% recent review freshness.`
       : `The two locations are close. Compare active nearby places, total review volume, average rating, median review depth, estimated area visitors and activity index before deciding.`;
 
     const result: ComparisonResult = {

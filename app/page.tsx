@@ -18,6 +18,7 @@ type Place = {
 type Side = {
   label: 'A' | 'B';
   input: string;
+  displayAddress?: string;
   coordinates: { lat: number; lng: number };
   score: number;
   metrics: Record<string, number>;
@@ -43,6 +44,43 @@ function Metric({ label, value, suffix = '' }: { label: string; value: number | 
       <span>{label}</span>
     </div>
   );
+}
+
+function scoreStatus(score: number) {
+  if (score >= 80) return 'Strong';
+  if (score >= 60) return 'Good';
+  if (score >= 40) return 'Mixed';
+  return 'Weak';
+}
+
+function ScoreBar({ score }: { score: number }) {
+  const safeScore = Math.max(0, Math.min(100, Number(score) || 0));
+  return (
+    <div className="score-bar" aria-label={`Score ${safeScore} out of 100`}>
+      <span style={{ width: `${safeScore}%` }} />
+    </div>
+  );
+}
+
+function ScoreCard({ side }: { side: Side }) {
+  return (
+    <div className="score-card">
+      <div className="score-card-top">
+        <span>Place {side.label}</span>
+        <b>{scoreStatus(side.score)}</b>
+      </div>
+      <strong>{side.score}<small>/100</small></strong>
+      <ScoreBar score={side.score} />
+      <p>{side.displayAddress || side.input}</p>
+    </div>
+  );
+}
+
+function getWinnerAddress(result: Result | null) {
+  if (!result) return '';
+  if (result.winner === 'Tie') return 'Tie between both addresses';
+  const side = result.sides[result.winner];
+  return side.displayAddress || side.input;
 }
 
 const DISPLAY_DISTANCE_LIMIT_METERS = 1000;
@@ -72,10 +110,11 @@ function SideCard({ side }: { side: Side }) {
       <div className="place-title">
         <div>
           <p className="kicker">Place {side.label}</p>
-          <h3>{side.input}</h3>
+          <h3>{side.displayAddress || side.input}</h3>
         </div>
-        <strong className="mini-score">{side.score}</strong>
+        <strong className="mini-score">{side.score}<small>/100</small></strong>
       </div>
+      <ScoreBar score={side.score} />
       <p className="notice">{side.coordinates.lat.toFixed(5)}, {side.coordinates.lng.toFixed(5)}</p>
       <div className="metrics">
         <Metric label="Active nearby places" value={side.metrics.activePoiCount ?? side.metrics.poiCount ?? 0} />
@@ -144,6 +183,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState('');
+  const winnerAddress = getWinnerAddress(result);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -254,10 +294,11 @@ export default function Home() {
           <>
             <div className="panel winner-panel">
               <div className="scoreboard">
-                <div className="score-card"><span>Place A score</span><strong>{result.sides.A.score}</strong></div>
-                <div className="score-card"><span>Place B score</span><strong>{result.sides.B.score}</strong></div>
+                <ScoreCard side={result.sides.A} />
+                <ScoreCard side={result.sides.B} />
               </div>
-              <h2>Winner: <span>{result.winner}</span></h2>
+              <p className="kicker winner-kicker">Recommended location</p>
+              <h2>{winnerAddress}</h2>
               <p>{result.summary}</p>
               <p className="notice save-notice">
                 {result.storage?.saved && result.storage.provider === 'postgres'

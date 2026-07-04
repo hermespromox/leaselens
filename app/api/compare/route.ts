@@ -61,6 +61,7 @@ const ACTIVE_PLACE_MIN_REVIEWS = 50;
 const MAPS_NEARBY_ZOOM = 15;
 const ACTIVE_PLACE_DISTANCE_LIMIT_METERS = 1000;
 const AREA_VISITORS_ROUNDING_STEP = 500;
+const SUPPORTED_CATEGORY = 'restaurant';
 
 function roundUpToNearest(value: number, step: number) {
   if (!Number.isFinite(value) || value <= 0) return 0;
@@ -471,12 +472,13 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const placeA = String(body.placeA || '').trim();
     const placeB = String(body.placeB || '').trim();
-    const category = String(body.category || '').trim() || 'restaurant';
+    const category = String(body.category || '').trim() || SUPPORTED_CATEGORY;
     const country = String(body.country || 'fr').toLowerCase().trim();
     const radiusMeters = Math.min(Math.max(Number(body.radiusMeters || 800), 300), 3000);
     const reviewWindowDays = REVIEW_WINDOW_DAYS;
     const maxResults = Math.min(Math.max(Number(body.maxResults || 100), 20), 500);
     if (!placeA || !placeB) return NextResponse.json({ error: 'Place A and Place B are required.' }, { status: 400 });
+    if (category !== SUPPORTED_CATEGORY) return NextResponse.json({ error: 'Only Restaurant is available for now. Other categories are coming soon.' }, { status: 400 });
 
     const [A, B] = await Promise.all([
       analyze('A', placeA, category, radiusMeters, reviewWindowDays, country, maxResults),

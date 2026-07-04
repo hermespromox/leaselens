@@ -120,18 +120,18 @@ const tiers = [
 
 const DEFAULT_RADIUS_METERS = 800;
 const businessCategories = [
-  { label: 'Restaurant', value: 'restaurant' },
-  { label: 'Coffee shop', value: 'coffee shop' },
-  { label: 'Bakery', value: 'bakery' },
-  { label: 'Bar', value: 'bar' },
-  { label: 'Fast food', value: 'fast food restaurant' },
-  { label: 'Grocery / supermarket', value: 'supermarket' },
-  { label: 'Pharmacy', value: 'pharmacy' },
-  { label: 'Beauty salon', value: 'beauty salon' },
-  { label: 'Gym / fitness', value: 'gym' },
-  { label: 'Dentist', value: 'dentist' },
-  { label: 'Hotel', value: 'hotel' },
-  { label: 'Coworking', value: 'coworking space' },
+  { label: 'Restaurant', value: 'restaurant', available: true },
+  { label: 'Coffee shop', value: 'coffee shop', available: false },
+  { label: 'Bakery', value: 'bakery', available: false },
+  { label: 'Bar', value: 'bar', available: false },
+  { label: 'Fast food', value: 'fast food restaurant', available: false },
+  { label: 'Grocery / supermarket', value: 'supermarket', available: false },
+  { label: 'Pharmacy', value: 'pharmacy', available: false },
+  { label: 'Beauty salon', value: 'beauty salon', available: false },
+  { label: 'Gym / fitness', value: 'gym', available: false },
+  { label: 'Dentist', value: 'dentist', available: false },
+  { label: 'Hotel', value: 'hotel', available: false },
+  { label: 'Coworking', value: 'coworking space', available: false },
 ];
 
 export default function Home() {
@@ -196,13 +196,25 @@ export default function Home() {
             <label>Place B address or lat,lng
               <input value={form.placeB} onChange={e => setForm({...form, placeB: e.target.value})} placeholder="57 rue Montorgueil, 75002 Paris" required />
             </label>
-            <label>Business/category
-              <select value={form.category} onChange={e => setForm({...form, category: e.target.value})} required>
+            <div className="form-field">
+              <span className="field-label">Business/category</span>
+              <div className="category-grid" role="radiogroup" aria-label="Business category">
                 {businessCategories.map(category => (
-                  <option key={category.value} value={category.value}>{category.label}</option>
+                  <button
+                    key={category.value}
+                    type="button"
+                    className={`category-option ${form.category === category.value ? 'selected' : ''} ${!category.available ? 'locked' : ''}`}
+                    disabled={!category.available}
+                    aria-checked={form.category === category.value}
+                    role="radio"
+                    onClick={() => category.available && setForm({...form, category: category.value})}
+                  >
+                    <span>{category.label}</span>
+                    {!category.available && <em>Soon</em>}
+                  </button>
                 ))}
-              </select>
-            </label>
+              </div>
+            </div>
             <p className="notice">Search area is fixed for consistent, apples-to-apples comparisons.</p>
             <button className="primary" disabled={loading}>{loading ? 'Scanning Maps data…' : 'Compare locations'}</button>
             {loading && (

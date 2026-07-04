@@ -83,15 +83,15 @@ function SideCard({ side }: { side: Side }) {
 }
 
 const customers = ['Local brokers', 'Franchise teams', 'Retail founders', 'Hospitality groups', 'SEO agencies'];
-const testimonials = [
-  ['“The fastest way to explain why one lease feels better than another.”', 'Commercial broker'],
-  ['“Review velocity makes the market feel tangible before a site visit.”', 'Franchise operator'],
-  ['“We use it to qualify local SEO territories in minutes.”', 'Growth agency'],
+const methodSteps = [
+  ['We scan nearby places', 'For each address, LeaseLens pulls every point of interest matching your chosen category inside the fixed 800m radius.'],
+  ['We sample the newest reviews', 'The most-reviewed nearby places are sampled for their most recent review timestamps to gauge current activity, not just historical volume.'],
+  ['We score and compare', 'Density, rating quality, review depth and recent velocity are combined into one score per address so you can see which location wins, and why.'],
 ];
 const tiers = [
-  ['Starter', '€49', 'One-off location checks', ['10 comparisons', 'POI density', 'Review velocity', 'PDF-ready report view']],
-  ['Pro', '€149', 'For brokers and operators', ['100 comparisons', 'Up to 500 POIs/search', 'Recent comments', 'CSV export soon']],
-  ['Studio', 'Custom', 'For teams and APIs', ['Team workspace', 'Bulk address lists', 'White-label reports', 'Custom data providers']],
+  ['Starter', '€49', 'One-off location checks', ['10 comparisons', 'POI density', 'Review velocity', 'Report view'], false],
+  ['Pro', '€149', 'For brokers and operators', ['100 comparisons', 'Up to 500 POIs/search', 'Recent comments', 'Saved history'], true],
+  ['Studio', 'Custom', 'For teams and APIs', ['Team workspace', 'Bulk address lists', 'White-label reports', 'Custom data providers'], false],
 ];
 
 const DEFAULT_RADIUS_METERS = 800;
@@ -245,10 +245,22 @@ export default function Home() {
           <p className="subtle">Use local POI density, customer activity and review depth to defend a site recommendation before the lease is signed.</p>
         </div>
         <div className="feature-grid">
-          <div className="feature"><b>Demand proxy</b><span>Total reviews and review velocity show where customers are active now.</span></div>
-          <div className="feature"><b>Market pressure</b><span>See density, strong operators, review depth and rating quality around each address.</span></div>
-          <div className="feature"><b>Decision-ready</b><span>Place A vs Place B scoring with the reasons behind the recommendation.</span></div>
-          <div className="feature"><b>Fast reports</b><span>Designed for brokers, franchise teams, founders and agencies that need a quick answer.</span></div>
+          <div className="feature">
+            <span className="feature-icon material-symbols-outlined" aria-hidden="true">query_stats</span>
+            <b>Demand proxy</b><span>Total reviews and review velocity show where customers are active now.</span>
+          </div>
+          <div className="feature">
+            <span className="feature-icon material-symbols-outlined" aria-hidden="true">storefront</span>
+            <b>Market pressure</b><span>See density, strong operators, review depth and rating quality around each address.</span>
+          </div>
+          <div className="feature">
+            <span className="feature-icon material-symbols-outlined" aria-hidden="true">balance</span>
+            <b>Decision-ready</b><span>Place A vs Place B scoring with the reasons behind the recommendation.</span>
+          </div>
+          <div className="feature">
+            <span className="feature-icon material-symbols-outlined" aria-hidden="true">bolt</span>
+            <b>Fast reports</b><span>Designed for brokers, franchise teams, founders and agencies that need a quick answer.</span>
+          </div>
         </div>
       </section>
 
@@ -257,17 +269,29 @@ export default function Home() {
         <div className="logo-row">{customers.map(c => <span key={c}>{c}</span>)}</div>
       </section>
 
-      <section className="shell testimonial-grid">
-        {testimonials.map(([quote, who]) => <div className="panel testimonial" key={quote}><p>{quote}</p><span>{who}</span></div>)}
+      <section className="shell method-grid">
+        {methodSteps.map(([title, desc], index) => (
+          <div className="panel method-step" key={title}>
+            <span className="method-index">{index + 1}</span>
+            <h3>{title}</h3>
+            <p>{desc}</p>
+          </div>
+        ))}
       </section>
 
       <section id="pricing" className="shell pricing">
         <div className="center"><p className="kicker">Pricing</p><h2>Start with reports. Scale into a workflow.</h2></div>
         <div className="pricing-grid">
-          {tiers.map(([name, price, desc, items]) => (
-            <div className="panel tier" key={name as string}>
+          {tiers.map(([name, price, desc, items, popular]) => (
+            <div className={`panel tier ${popular ? 'tier-popular' : ''}`} key={name as string}>
+              {popular && <span className="tier-badge">Most popular</span>}
               <h3>{name}</h3><strong>{price}</strong><p>{desc}</p>
               <ul>{(items as string[]).map(i => <li key={i}>{i}</li>)}</ul>
+              <div className="tier-cta">
+                <a className={popular ? 'primary-link' : 'secondary-link'} href="/signup" style={{ width: '100%' }}>
+                  {price === 'Custom' ? 'Contact sales' : `Choose ${name}`}
+                </a>
+              </div>
             </div>
           ))}
         </div>
@@ -281,8 +305,27 @@ export default function Home() {
       </section>
 
       <footer className="footer shell">
-        <strong>LeaseLens</strong>
-        <span>Compare locations before you sign.</span>
+        <div className="footer-brand">
+          <strong>LeaseLens</strong>
+          <p>Compare locations before you sign. Location intelligence for lease decisions, built for brokers, franchise teams and founders.</p>
+        </div>
+        <div className="footer-links">
+          <div className="footer-col">
+            <span>Product</span>
+            <a href="#product">Features</a>
+            <a href="#pricing">Pricing</a>
+            <a href="/history">History</a>
+          </div>
+          <div className="footer-col">
+            <span>Account</span>
+            <a href="/login">Log in</a>
+            <a href="/signup">Create account</a>
+          </div>
+          <div className="footer-col">
+            <span>Legal</span>
+            <a href="#legal">Mentions légales</a>
+          </div>
+        </div>
       </footer>
     </main>
   );

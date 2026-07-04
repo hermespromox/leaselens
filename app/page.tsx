@@ -84,7 +84,7 @@ function SideCard({ side }: { side: Side }) {
 
 const customers = ['Local brokers', 'Franchise teams', 'Retail founders', 'Hospitality groups', 'SEO agencies'];
 const methodSteps = [
-  ['We scan nearby places', 'For each address, LeaseLens pulls every point of interest matching your chosen category inside the fixed 800m radius.'],
+  ['We scan nearby places', 'For each address, LeaseLens pulls every point of interest matching your chosen category within walking distance.'],
   ['We sample the newest reviews', 'The most-reviewed nearby places are sampled for their most recent review timestamps to gauge current activity, not just historical volume.'],
   ['We score and compare', 'Density, rating quality, review depth and recent velocity are combined into one score per address so you can see which location wins, and why.'],
 ];
@@ -179,7 +179,7 @@ export default function Home() {
                 ))}
               </select>
             </label>
-            <p className="notice">Radius is fixed at {DEFAULT_RADIUS_METERS}m for consistent comparisons.</p>
+            <p className="notice">Search area is fixed for consistent, apples-to-apples comparisons.</p>
             <button className="primary" disabled={loading}>{loading ? 'Scanning Maps data…' : 'Compare locations'}</button>
             {loading && (
               <div className="charge-loader" role="status" aria-live="polite">

@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { logoutAction } from '@/app/auth/actions';
 import { getCurrentConfirmedUser } from '@/lib/supabase/server';
 import { getComparisonHistory, getWorkspaceSummary } from '@/lib/leaselense';
+import NavBar from '@/components/NavBar';
 
 function formatDate(value: string | null) {
   if (!value) return 'No saved reports yet';
@@ -20,10 +21,7 @@ export default async function AccountPage({ searchParams }: { searchParams: { er
 
   return (
     <main>
-      <nav className="nav">
-        <Link className="brand" href="/"><span className="material-symbols-outlined logo-icon">alt_route</span><span>LeaseLens</span></Link>
-        <div><Link href="/#compare">Compare</Link><Link href="/history">Reports</Link><Link href="/account">Workspace</Link></div>
-      </nav>
+      <NavBar active="account" />
 
       <section className="shell workspace-shell">
         <div className="workspace-hero panel">

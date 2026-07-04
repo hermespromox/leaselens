@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getCurrentConfirmedUser } from '@/lib/supabase/server';
 import { getComparisonHistory } from '@/lib/leaselense';
+import NavBar from '@/components/NavBar';
 
 export default async function HistoryPage() {
   const user = await getCurrentConfirmedUser();
@@ -11,10 +12,7 @@ export default async function HistoryPage() {
 
   return (
     <main>
-      <nav className="nav">
-        <Link className="brand" href="/"><span className="material-symbols-outlined logo-icon">alt_route</span><span>LeaseLens</span></Link>
-        <div><Link href="/">Compare</Link><Link href="/history">History</Link><Link href="/account">Account</Link></div>
-      </nav>
+      <NavBar active="history" />
       <section className="shell history-shell">
         <div className="history-head">
           <div>

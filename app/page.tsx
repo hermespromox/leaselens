@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import NavBar from '@/components/NavBar';
 
 type Place = {
   name: string;
@@ -148,16 +149,7 @@ export default function Home() {
 
   return (
     <main>
-      <nav className="nav">
-        <a className="brand" href="#top" aria-label="LeaseLens"><span aria-hidden="true" className="material-symbols-outlined logo-icon">alt_route</span><span>LeaseLens</span></a>
-        <div>
-          <a href="#product">Product</a>
-          <a href="#pricing">Pricing</a>
-          <a href="/history">History</a>
-          <a href="/login">Log in</a>
-          <a href="#legal">Legal</a>
-        </div>
-      </nav>
+      <NavBar active="compare" />
 
       <section id="top" className="hero shell">
         <div className="hero-copy">
@@ -215,7 +207,13 @@ export default function Home() {
             <div className="charge-track large"><span /></div>
           </div>
         )}
-        {!loading && !result && !error && <div className="panel empty">Run the demo above to generate a live Place A vs Place B report.</div>}
+        {!loading && !result && !error && (
+          <div className="panel empty-state">
+            <span className="material-symbols-outlined empty-icon" aria-hidden="true">query_stats</span>
+            <h3>No comparison yet</h3>
+            <p className="notice">Fill in two addresses above and pick a category — your Place A vs Place B report will appear here in a few seconds.</p>
+          </div>
+        )}
         {result && (
           <>
             <div className="panel winner-panel">

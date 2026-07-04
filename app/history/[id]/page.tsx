@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { getCurrentConfirmedUser } from '@/lib/supabase/server';
 import { getComparisonDetail } from '@/lib/leaselense';
+import NavBar from '@/components/NavBar';
 
 function valueText(value: unknown) {
   if (value === null || value === undefined || value === '') return '—';
@@ -20,10 +21,7 @@ export default async function HistoryDetailPage({ params }: { params: { id: stri
 
   return (
     <main>
-      <nav className="nav">
-        <Link className="brand" href="/"><span className="material-symbols-outlined logo-icon">alt_route</span><span>LeaseLens</span></Link>
-        <div><Link href="/history">History</Link><Link href="/account">Account</Link></div>
-      </nav>
+      <NavBar active="history" />
       <section className="shell history-shell">
         <Link className="secondary-link back-link" href="/history">← Back to history</Link>
         <div className="panel winner-panel detail-hero">

@@ -29,7 +29,7 @@ export async function signUpAction(formData: FormData) {
   });
 
   if (error) redirectWithMessage('/signup', 'error', error.message);
-  redirectWithMessage('/login', 'message', 'Account created. Check your email if confirmation is enabled, then sign in.');
+  redirectWithMessage('/login', 'message', 'Account created. Confirm your email before accessing your workspace.');
 }
 
 export async function loginAction(formData: FormData) {
@@ -39,11 +39,15 @@ export async function loginAction(formData: FormData) {
   if (!email || !password) redirectWithMessage('/login', 'error', 'Email and password are required.');
 
   const supabase = createSupabaseServerClient();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) redirectWithMessage('/login', 'error', error.message);
+  if (!data.user?.email_confirmed_at) {
+    await supabase.auth.signOut();
+    redirectWithMessage('/login', 'error', 'Please confirm your email before accessing your workspace.');
+  }
 
   revalidatePath('/', 'layout');
-  redirect('/history');
+  redirect('/account');
 }
 
 export async function logoutAction() {

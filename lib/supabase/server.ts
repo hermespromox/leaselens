@@ -44,3 +44,9 @@ export async function getCurrentUser() {
     return null;
   }
 }
+
+export async function getCurrentConfirmedUser() {
+  const user = await getCurrentUser();
+  if (!user?.email_confirmed_at) return null;
+  return user;
+}

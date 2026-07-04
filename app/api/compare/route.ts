@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Pool } from 'pg';
-import { getCurrentUser } from '@/lib/supabase/server';
+import { getCurrentConfirmedUser } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -416,7 +416,7 @@ async function analyze(label: 'A' | 'B', input: string, category: string, radius
 
 export async function POST(req: NextRequest) {
   try {
-    const user = await getCurrentUser();
+    const user = await getCurrentConfirmedUser();
     const body = await req.json();
     const placeA = String(body.placeA || '').trim();
     const placeB = String(body.placeB || '').trim();

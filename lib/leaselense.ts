@@ -19,6 +19,16 @@ export type HistoryItem = {
   score_b: number | null;
 };
 
+export type WorkspaceSummary = {
+  total: number;
+  linked_count: number;
+  last_comparison_at: string | null;
+  winner_a: number;
+  winner_b: number;
+  ties: number;
+  top_category: string | null;
+};
+
 export function getLeaseLensPool() {
   const connectionString = process.env.LEASELENS_DATABASE_URL || process.env.DATABASE_URL;
   if (!connectionString) throw new Error('Missing LEASELENS_DATABASE_URL or DATABASE_URL.');
@@ -78,6 +88,32 @@ export async function getComparisonHistory(userId: string, limit = 50): Promise<
     limit $2
   `, [userId, limit]);
   return result.rows;
+}
+
+export async function getWorkspaceSummary(userId: string): Promise<WorkspaceSummary> {
+  await ensureLeaselenseUserSchema();
+  const pool = getLeaseLensPool();
+  const result = await pool.query<WorkspaceSummary>(`
+    with user_comparisons as (
+      select * from leaselense.comparisons where user_id = $1
+    ), category_counts as (
+      select category, count(*)::int as count
+      from user_comparisons
+      group by category
+      order by count desc, category asc
+      limit 1
+    )
+    select
+      count(*)::int as total,
+      count(user_id)::int as linked_count,
+      max(created_at)::text as last_comparison_at,
+      count(*) filter (where winner = 'A')::int as winner_a,
+      count(*) filter (where winner = 'B')::int as winner_b,
+      count(*) filter (where winner = 'Tie')::int as ties,
+      (select category from category_counts) as top_category
+    from user_comparisons
+  `, [userId]);
+  return result.rows[0] ?? { total: 0, linked_count: 0, last_comparison_at: null, winner_a: 0, winner_b: 0, ties: 0, top_category: null };
 }
 
 export async function getComparisonDetail(userId: string, id: string) {

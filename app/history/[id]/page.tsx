@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
-import { getCurrentUser } from '@/lib/supabase/server';
+import { getCurrentConfirmedUser } from '@/lib/supabase/server';
 import { getComparisonDetail } from '@/lib/leaselense';
 
 function valueText(value: unknown) {
@@ -10,7 +10,7 @@ function valueText(value: unknown) {
 }
 
 export default async function HistoryDetailPage({ params }: { params: { id: string } }) {
-  const user = await getCurrentUser();
+  const user = await getCurrentConfirmedUser();
   if (!user) redirect('/login?message=Log in to view this comparison.');
 
   const detail = await getComparisonDetail(user.id, params.id);

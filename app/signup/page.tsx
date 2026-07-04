@@ -1,11 +1,11 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { signUpAction } from '@/app/auth/actions';
-import { getCurrentUser } from '@/lib/supabase/server';
+import { getCurrentConfirmedUser } from '@/lib/supabase/server';
 
 export default async function SignupPage({ searchParams }: { searchParams: { error?: string; message?: string } }) {
-  const user = await getCurrentUser();
-  if (user) redirect('/history');
+  const user = await getCurrentConfirmedUser();
+  if (user) redirect('/account');
 
   return (
     <main className="auth-shell">

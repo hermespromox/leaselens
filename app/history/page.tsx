@@ -1,10 +1,10 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { getCurrentUser } from '@/lib/supabase/server';
+import { getCurrentConfirmedUser } from '@/lib/supabase/server';
 import { getComparisonHistory } from '@/lib/leaselense';
 
 export default async function HistoryPage() {
-  const user = await getCurrentUser();
+  const user = await getCurrentConfirmedUser();
   if (!user) redirect('/login?message=Log in to view your saved comparisons.');
 
   const items = await getComparisonHistory(user.id);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import NavBar from '@/components/NavBar';
 
 type Place = {
@@ -186,6 +186,13 @@ export default function Home() {
   const [error, setError] = useState('');
   const [locked, setLocked] = useState(false);
   const [lockedMessage, setLockedMessage] = useState('');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/session').then(r => r.json()).then(data => {
+      setIsLoggedIn(Boolean(data?.loggedIn && data?.confirmed));
+    }).catch(() => {});
+  }, []);
   const winnerAddress = getWinnerAddress(result);
 
   async function submit(e: React.FormEvent) {
@@ -244,11 +251,23 @@ export default function Home() {
             <div className="lock-screen">
               <span className="material-symbols-outlined lock-icon" aria-hidden="true">lock</span>
               <h3>{lockedMessage}</h3>
-              <p className="notice">Create a free account to get 5 benchmarks per month, or choose a paid plan for more.</p>
-              <div className="hero-actions" style={{ marginTop: 16 }}>
-                <a className="primary-link" href="/signup">Create free account</a>
-                <a className="secondary-link" href="/login">Log in</a>
-              </div>
+              {isLoggedIn ? (
+                <>
+                  <p className="notice">You have reached your free plan limit. Upgrade to a paid plan for more benchmarks.</p>
+                  <div className="hero-actions" style={{ marginTop: 16 }}>
+                    <a className="primary-link" href="#pricing">Upgrade plan</a>
+                    <a className="secondary-link" href="/account">My account</a>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="notice">Create a free account to get 5 benchmarks per month, or choose a paid plan for more.</p>
+                  <div className="hero-actions" style={{ marginTop: 16 }}>
+                    <a className="primary-link" href="/signup">Create free account</a>
+                    <a className="secondary-link" href="/login">Log in</a>
+                  </div>
+                </>
+              )}
             </div>
           ) : (
           <form className="form" onSubmit={submit}>

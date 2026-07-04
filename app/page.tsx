@@ -29,6 +29,7 @@ type Result = {
   reviewWindowDays: number;
   maxResults: number;
   sides: { A: Side; B: Side };
+  storage?: { saved: boolean; id: string | number | null; provider: string | null };
 };
 
 function Metric({ label, value, suffix = '' }: { label: string; value: number | string; suffix?: string }) {
@@ -152,6 +153,8 @@ export default function Home() {
         <div>
           <a href="#product">Product</a>
           <a href="#pricing">Pricing</a>
+          <a href="/history">History</a>
+          <a href="/login">Log in</a>
           <a href="#legal">Legal</a>
         </div>
       </nav>
@@ -222,6 +225,15 @@ export default function Home() {
               </div>
               <h2>Winner: <span>{result.winner}</span></h2>
               <p>{result.summary}</p>
+              <p className="notice save-notice">
+                {result.storage?.saved && result.storage.provider === 'postgres'
+                  ? 'Saved. If you are logged in, this report is available in your history.'
+                  : 'Create an account or log in before running a comparison to keep it in your history.'}
+              </p>
+              <div className="hero-actions compact-actions">
+                <a className="secondary-link" href="/history">Open history</a>
+                <a className="secondary-link" href="/signup">Create account</a>
+              </div>
             </div>
             <div className="columns"><SideCard side={result.sides.A} /><SideCard side={result.sides.B} /></div>
           </>

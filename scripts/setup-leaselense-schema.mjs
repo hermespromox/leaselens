@@ -14,6 +14,7 @@ create schema if not exists leaselense;
 create table if not exists leaselense.comparisons (
   id bigserial primary key,
   created_at timestamptz not null default now(),
+  user_id uuid references auth.users(id) on delete set null,
   place_a text not null,
   place_b text not null,
   category text not null,
@@ -27,6 +28,9 @@ create table if not exists leaselense.comparisons (
   score_b integer,
   result jsonb not null
 );
+
+alter table leaselense.comparisons
+add column if not exists user_id uuid references auth.users(id) on delete set null;
 
 create table if not exists leaselense.comparison_locations (
   id bigserial primary key,
@@ -56,6 +60,7 @@ create table if not exists leaselense.reviews_sampled (
 
 create index if not exists comparisons_created_at_idx on leaselense.comparisons (created_at desc);
 create index if not exists comparisons_category_idx on leaselense.comparisons (category);
+create index if not exists comparisons_user_id_created_at_idx on leaselense.comparisons (user_id, created_at desc);
 create index if not exists comparison_locations_comparison_id_idx on leaselense.comparison_locations (comparison_id);
 create index if not exists reviews_sampled_comparison_id_idx on leaselense.reviews_sampled (comparison_id);
 `;

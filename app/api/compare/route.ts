@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Pool } from 'pg';
+import { getCurrentUser } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -124,6 +125,7 @@ async function ensureLeaselenseSchema(pool: Pool) {
       create table if not exists leaselense.comparisons (
         id bigserial primary key,
         created_at timestamptz not null default now(),
+        user_id uuid references auth.users(id) on delete set null,
         place_a text not null,
         place_b text not null,
         category text not null,
@@ -137,6 +139,9 @@ async function ensureLeaselenseSchema(pool: Pool) {
         score_b integer,
         result jsonb not null
       );
+
+      alter table leaselense.comparisons
+      add column if not exists user_id uuid references auth.users(id) on delete set null;
 
       create table if not exists leaselense.comparison_locations (
         id bigserial primary key,
@@ -166,6 +171,7 @@ async function ensureLeaselenseSchema(pool: Pool) {
 
       create index if not exists comparisons_created_at_idx on leaselense.comparisons (created_at desc);
       create index if not exists comparisons_category_idx on leaselense.comparisons (category);
+      create index if not exists comparisons_user_id_created_at_idx on leaselense.comparisons (user_id, created_at desc);
       create index if not exists comparison_locations_comparison_id_idx on leaselense.comparison_locations (comparison_id);
       create index if not exists reviews_sampled_comparison_id_idx on leaselense.reviews_sampled (comparison_id);
     `).then(() => undefined);
@@ -173,7 +179,7 @@ async function ensureLeaselenseSchema(pool: Pool) {
   return globalThis.leaselensSchemaReady;
 }
 
-async function saveComparisonToPostgres(criteria: Record<string, unknown>, result: ComparisonResult) {
+async function saveComparisonToPostgres(criteria: Record<string, unknown>, result: ComparisonResult, userId: string | null) {
   const pool = postgresPool();
   if (!pool) return null;
   await ensureLeaselenseSchema(pool);
@@ -182,11 +188,12 @@ async function saveComparisonToPostgres(criteria: Record<string, unknown>, resul
     await client.query('begin');
     const comparison = await client.query<{ id: number }>(`
       insert into leaselense.comparisons (
-        place_a, place_b, category, country, radius_meters, review_window_days, max_results,
+        user_id, place_a, place_b, category, country, radius_meters, review_window_days, max_results,
         winner, summary, score_a, score_b, result
-      ) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+      ) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
       returning id
     `, [
+      userId,
       criteria.placeA,
       criteria.placeB,
       criteria.category,
@@ -238,9 +245,9 @@ async function saveComparisonToPostgres(criteria: Record<string, unknown>, resul
   }
 }
 
-async function saveComparison(criteria: Record<string, unknown>, result: ComparisonResult) {
+async function saveComparison(criteria: Record<string, unknown>, result: ComparisonResult, userId: string | null) {
   try {
-    const comparisonId = await saveComparisonToPostgres(criteria, result);
+    const comparisonId = await saveComparisonToPostgres(criteria, result, userId);
     if (comparisonId) return { provider: 'postgres', id: comparisonId };
   } catch (err) {
     console.warn('Postgres save skipped:', err);
@@ -409,6 +416,7 @@ async function analyze(label: 'A' | 'B', input: string, category: string, radius
 
 export async function POST(req: NextRequest) {
   try {
+    const user = await getCurrentUser();
     const body = await req.json();
     const placeA = String(body.placeA || '').trim();
     const placeB = String(body.placeB || '').trim();
@@ -447,7 +455,7 @@ export async function POST(req: NextRequest) {
       radiusMeters,
       reviewWindowDays,
       maxResults,
-    }, result);
+    }, result, user?.id ?? null);
 
     return NextResponse.json({
       ...result,

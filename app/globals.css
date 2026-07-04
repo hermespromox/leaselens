@@ -46,12 +46,16 @@ button:focus-visible, a:focus-visible { outline-offset: 2px; }
 .nav-active { color: var(--ink) !important; font-weight: 800; }
 .nav-cta { border: 1px solid var(--line); border-radius: 999px; padding: 8px 16px; color: var(--ink) !important; background: #fff; font-weight: 750; }
 .nav-cta:hover { border-color: var(--accent); }
-.nav-account { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); border-radius: 999px; padding: 7px 14px 7px 8px; background: #fff; color: var(--ink) !important; font-weight: 700; max-width: 220px; }
-.nav-account span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.nav-account-icon { font-size: 20px; color: var(--accent-dark); }
+.nav-auth-loading { width: 112px; height: 36px; border: 1px solid var(--line); border-radius: 999px; background: linear-gradient(90deg, #fff, var(--soft), #fff); background-size: 220% 100%; animation: navPulse 1.2s ease-in-out infinite; opacity: .82; }
+.nav-account { display: inline-flex; align-items: center; gap: 9px; border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px 6px 7px; background: #fff; color: var(--ink) !important; font-weight: 700; max-width: 230px; min-height: 38px; box-shadow: 0 8px 24px rgba(16,20,24,.05); }
+.nav-account-copy { display: grid; min-width: 0; line-height: 1.05; }
+.nav-account-copy strong { font-size: 12px; letter-spacing: .01em; }
+.nav-account-copy span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: 11px; font-weight: 650; max-width: 158px; }
+.nav-account-icon { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; font-size: 22px; line-height: 1; color: var(--accent-dark); flex: 0 0 auto; }
 .nav-toggle { display: none; border: 1px solid var(--line); background: #fff; border-radius: 12px; width: 40px; height: 40px; align-items: center; justify-content: center; cursor: pointer; }
 .nav-sheet { position: absolute; top: 100%; left: 0; right: 0; margin: 8px 18px 0; background: var(--paper); border: 1px solid var(--line); border-radius: 20px; box-shadow: var(--shadow); padding: 10px; display: grid; gap: 2px; z-index: 20; }
-.nav-sheet a { padding: 12px 14px; border-radius: 14px; color: var(--ink); font-weight: 650; font-size: 15px; }
+.nav-sheet a, .nav-sheet-loading { padding: 12px 14px; border-radius: 14px; color: var(--ink); font-weight: 650; font-size: 15px; }
+.nav-sheet-loading { color: var(--muted); }
 .nav-sheet a:hover { background: var(--soft); }
 .brand { font-weight: 900; letter-spacing: -0.04em; font-size: 22px; display: inline-flex; align-items: center; gap: 8px; }
 .logo-icon { font-size: 28px; color: var(--accent-dark); line-height: 1; }
@@ -167,7 +171,8 @@ input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 4px r
 .feature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .feature { background: #fff; border: 1px solid var(--line); border-radius: 22px; padding: 18px; display: grid; gap: 8px; transition: border-color .15s ease, transform .15s ease; }
 .feature:hover { border-color: var(--accent); transform: translateY(-2px); }
-.feature-icon { width: 38px; height: 38px; border-radius: 12px; background: var(--soft); color: var(--accent-dark); display: grid; place-items: center; font-size: 20px; }
+.feature-icon { width: 38px; height: 38px; border-radius: 12px; background: var(--soft); color: var(--accent-dark); display: inline-flex; align-items: center; justify-content: center; font-size: 20px; line-height: 1; }
+.feature .feature-icon.material-symbols-outlined { display: flex !important; align-items: center; justify-content: center; color: var(--accent-dark); line-height: 1 !important; font-size: 20px; }
 .feature b { font-size: 18px; }
 .feature span { color: var(--muted); line-height: 1.5; }
 .customers { padding: 26px 0 48px; }
@@ -245,6 +250,10 @@ ul { padding-left: 20px; color: #3d4651; line-height: 1.9; }
 .footer-col span { text-transform: uppercase; letter-spacing: .08em; font-size: 11px; font-weight: 800; color: var(--ink); margin-bottom: 2px; }
 .footer-col a { color: var(--muted); transition: color .15s ease; }
 .footer-col a:hover { color: var(--accent-dark); }
+@keyframes navPulse {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 220% 50%; }
+}
 @keyframes chargeFill {
   0% { width: 16%; transform: translateX(-18%); }
   45% { width: 72%; transform: translateX(18%); }

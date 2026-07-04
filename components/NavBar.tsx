@@ -13,6 +13,7 @@ const MARKETING_LINKS = [
 export default function NavBar({ active, variant = 'marketing' }: { active?: 'compare' | 'history' | 'account'; variant?: 'marketing' | 'app' }) {
   const [open, setOpen] = useState(false);
   const [session, setSession] = useState<SessionState | null>(null);
+  const isLoadingSession = session === null;
 
   useEffect(() => {
     let cancelled = false;
@@ -29,6 +30,19 @@ export default function NavBar({ active, variant = 'marketing' }: { active?: 'co
 
   const isAuthed = Boolean(session?.loggedIn && session?.confirmed);
   const contextLinks = variant === 'marketing' ? MARKETING_LINKS : [];
+  const authControl = isLoadingSession ? (
+    <span className="nav-auth-loading" aria-label="Checking session" aria-live="polite" />
+  ) : isAuthed ? (
+    <Link href="/account" className={`nav-account ${active === 'account' ? 'nav-active' : ''}`} title={session?.email}>
+      <span className="material-symbols-outlined nav-account-icon" aria-hidden="true">account_circle</span>
+      <span className="nav-account-copy">
+        <strong>Account</strong>
+        <span>{session?.email}</span>
+      </span>
+    </Link>
+  ) : (
+    <Link href="/login" className="nav-cta">Log in</Link>
+  );
 
   return (
     <nav className="nav">
@@ -47,14 +61,7 @@ export default function NavBar({ active, variant = 'marketing' }: { active?: 'co
           )}
           <Link href="/history" className={active === 'history' ? 'nav-active' : undefined}>History</Link>
           {variant === 'marketing' && <a href="/#legal">Legal</a>}
-          {isAuthed ? (
-            <Link href="/account" className={`nav-account ${active === 'account' ? 'nav-active' : ''}`}>
-              <span className="material-symbols-outlined nav-account-icon">account_circle</span>
-              {session?.email}
-            </Link>
-          ) : (
-            <Link href="/login" className="nav-cta">Log in</Link>
-          )}
+          {authControl}
         </div>
 
         <button
@@ -75,7 +82,9 @@ export default function NavBar({ active, variant = 'marketing' }: { active?: 'co
               <Link href="/#compare" onClick={() => setOpen(false)}>Compare</Link>
             )}
             <Link href="/history" onClick={() => setOpen(false)}>History</Link>
-            {isAuthed ? (
+            {isLoadingSession ? (
+              <span className="nav-sheet-loading">Checking session…</span>
+            ) : isAuthed ? (
               <Link href="/account" onClick={() => setOpen(false)}>Account · {session?.email}</Link>
             ) : (
               <Link href="/login" onClick={() => setOpen(false)}>Log in</Link>

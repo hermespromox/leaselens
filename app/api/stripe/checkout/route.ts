@@ -21,17 +21,17 @@ export async function POST(req: NextRequest) {
 async function handleCheckout(req: NextRequest) {
   const user = await getCurrentConfirmedUser()
   if (!user) {
-    return NextResponse.json({ error: 'Vous devez être connecté pour vous abonner.' }, { status: 401 })
+    return NextResponse.json({ error: 'You must be logged in to subscribe.' }, { status: 401 })
   }
 
   const stripe = getStripe()
   if (!stripe) {
-    return NextResponse.json({ error: 'Stripe n\'est pas configuré.' }, { status: 500 })
+    return NextResponse.json({ error: 'Stripe is not configured.' }, { status: 500 })
   }
 
   const priceId = getStripePriceId('pro')
   if (!priceId) {
-    return NextResponse.json({ error: 'Le plan Pro n\'est pas configuré.' }, { status: 500 })
+    return NextResponse.json({ error: 'Pro plan is not configured.' }, { status: 500 })
   }
 
   let body: Record<string, string> = {}
@@ -56,7 +56,7 @@ async function handleCheckout(req: NextRequest) {
 
   const plan = body.plan || 'pro'
   if (plan !== 'pro') {
-    return NextResponse.json({ error: 'Plan inconnu.' }, { status: 400 })
+    return NextResponse.json({ error: 'Unknown plan.' }, { status: 400 })
   }
 
   try {
@@ -74,56 +74,50 @@ async function handleCheckout(req: NextRequest) {
       // Already subscribed — redirect to portal
       const portal = await stripe.billingPortal.sessions.create({
         customer: customerId,
-        return_url: `${origin()}/account?message=Votre abonnement Pro est déjà actif.`,
+        return_url: `${origin()}/account?message=Your Pro subscription is already active.`,
       })
       return NextResponse.redirect(portal.url, 303)
-    }
-
-    const taxRateId = process.env.STRIPE_TAX_RATE_ID
-    const subscriptionData: Record<string, unknown> = {
-      metadata: {
-        supabase_user_id: user.id,
-        app: 'asklizy',
-        plan: 'pro',
-      },
-    }
-    if (taxRateId) {
-      subscriptionData.default_tax_rates = [taxRateId]
     }
 
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       mode: 'subscription',
       line_items: [{ price: priceId, quantity: 1 }],
-      locale: 'fr',
+      locale: 'en',
       billing_address_collection: 'required',
       tax_id_collection: { enabled: true },
       automatic_tax: { enabled: true },
-      subscription_data: subscriptionData as Stripe.Checkout.SessionCreateParams.SubscriptionData,
+      subscription_data: {
+        metadata: {
+          supabase_user_id: user.id,
+          app: 'asklizy',
+          plan: 'pro',
+        },
+      } as Stripe.Checkout.SessionCreateParams.SubscriptionData,
       custom_fields: [
         {
           key: 'company_name',
-          label: { type: 'custom', custom: 'Nom de l\'entreprise' },
+          label: { type: 'custom', custom: 'Company name' },
           type: 'text',
           optional: true,
         },
         {
           key: 'siret',
-          label: { type: 'custom', custom: 'SIRET' },
+          label: { type: 'custom', custom: 'SIRET / VAT number' },
           type: 'text',
           optional: true,
         },
       ],
-      success_url: `${origin()}/account?message=Votre abonnement Pro est maintenant actif. Bienvenue !`,
+      success_url: `${origin()}/account?message=Your Pro subscription is now active. Welcome!`,
       cancel_url: `${origin()}/#pricing`,
     })
 
     if (!session.url) {
-      return NextResponse.redirect(`${origin()}/account?error=${encodeURIComponent('Session de paiement indisponible.')}`, 303)
+      return NextResponse.redirect(`${origin()}/account?error=${encodeURIComponent('Payment session unavailable.')}`, 303)
     }
     return NextResponse.redirect(session.url, 303)
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Erreur lors de la création de la session.'
+    const message = err instanceof Error ? err.message : 'Error creating checkout session.'
     return NextResponse.redirect(
       `${origin()}/account?error=${encodeURIComponent(message)}`,
       303

@@ -2,7 +2,7 @@ import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
 
 export const PLANS = {
-  free: { id: 'free', label: 'Gratuit', price: 0, maxComparisons: 3, canExport: false },
+  free: { id: 'free', label: 'Free', price: 0, maxComparisons: 3, canExport: false },
   pro: { id: 'pro', label: 'Pro', price: 29, maxComparisons: null, canExport: true },
   staff: { id: 'staff', label: 'Staff', price: 0, maxComparisons: null, canExport: true },
 } as const
@@ -42,7 +42,7 @@ export function getBillingProfile(user: any) {
   const plan = getPlanFromUser(user)
   return {
     plan,
-    planLabel: PLANS[plan as keyof typeof PLANS]?.label || 'Gratuit',
+    planLabel: PLANS[plan as keyof typeof PLANS]?.label || 'Free',
     status: plan === 'staff' ? 'staff' : user?.app_metadata?.stripe_subscription_status || null,
     stripeCustomerId: user?.app_metadata?.stripe_customer_id || null,
     stripeSubscriptionId: user?.app_metadata?.stripe_subscription_id || null,
@@ -121,4 +121,22 @@ export async function syncSubscriptionToUser(userId: string, subscription: Strip
     patch.asklizy_plan = 'free'
   }
   await updateUserBilling(userId, patch)
+}
+
+export async function listRecentInvoices(user: any, limit = 6) {
+  const stripe = getStripe()
+  const customer = user?.app_metadata?.stripe_customer_id
+  if (!stripe || !customer) return []
+  const invoices = await stripe.invoices.list({ customer, limit })
+  return invoices.data.map((invoice) => ({
+    id: invoice.id,
+    number: invoice.number,
+    status: invoice.status,
+    amountPaid: invoice.amount_paid,
+    amountDue: invoice.amount_due,
+    currency: invoice.currency,
+    created: invoice.created,
+    hostedInvoiceUrl: invoice.hosted_invoice_url,
+    invoicePdf: invoice.invoice_pdf,
+  }))
 }

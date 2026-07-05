@@ -2,11 +2,11 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'AskLizy — Posez la question avant de signer le bail',
-  description: 'Comparez deux adresses grâce aux POIs locaux, avis, notes, concurrence et estimations de visiteurs avant de signer un bail.',
+  title: 'AskLizy — Ask before you sign the lease',
+  description: 'Compare two addresses using local POIs, reviews, ratings, competition and visitor estimates before signing a lease.',
   openGraph: {
     title: 'AskLizy',
-    description: 'Intelligence de localisation par IA pour vos décisions de bail.',
+    description: 'AI location intelligence for lease decisions.',
     url: 'https://asklizy.com',
     siteName: 'AskLizy',
   },

@@ -161,8 +161,8 @@ const methodSteps = [
 
 const tiers = [
   { name: 'Free', original: '', price: '€0', period: '/mo', desc: 'Try it out', items: ['5 benchmarks / month', 'Active POI density', 'Area visitors/day', 'Report view'], popular: false },
-  { name: 'Starter', original: '€99', price: '€49', period: '/mo', desc: 'One-off location checks', items: ['10 benchmarks', 'Active POI density', 'Area visitors/day', 'Report view'], popular: false },
-  { name: 'Pro', original: '€299', price: '€149', period: '/mo', desc: 'For brokers and operators', items: ['100 benchmarks', 'Up to 500 POIs/search', 'Recent comments', 'Saved history'], popular: true },
+  { name: 'Starter', original: '€49', price: '€19', period: '/mo', desc: 'One-off location checks', items: ['10 benchmarks', 'Active POI density', 'Area visitors/day', 'Report view'], popular: false },
+  { name: 'Pro', original: '€49', price: '€29', period: '/mo', desc: 'For brokers and operators', items: ['100 benchmarks', 'Up to 500 POIs/search', 'Recent comments', 'Saved history'], popular: true },
   { name: 'Studio', original: '', price: 'Custom', period: '', desc: 'For teams and APIs', items: ['Team workspace', 'Bulk address lists', 'White-label reports', 'Custom data providers'], popular: false },
 ];
 

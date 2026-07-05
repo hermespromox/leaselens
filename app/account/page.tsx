@@ -3,7 +3,9 @@ import { redirect } from 'next/navigation'
 import { logoutAction } from '@/app/auth/actions'
 import { getCurrentConfirmedUser } from '@/lib/supabase/server'
 import { getComparisonHistory, getWorkspaceSummary } from '@/lib/leaselense'
-import { getBillingProfile, listRecentInvoices } from '@/lib/billing'
+import { getBillingProfile, listRecentInvoices, PLANS } from '@/lib/billing'
+import { postgresPool } from '@/lib/pool'
+import { countUserMonthlyBenchmarks } from '@/lib/credits'
 import NavBar from '@/components/NavBar'
 
 function formatAmount(amount: number, currency = 'eur') {
@@ -48,6 +50,21 @@ export default async function AccountPage({ searchParams }: { searchParams: { er
 
   const billing = getBillingProfile(user)
   const invoices = await listRecentInvoices(user)
+
+  // Get credits info
+  const pool = postgresPool()
+  const planConfig = PLANS[billing.plan as keyof typeof PLANS]
+  const isUnlimited = planConfig?.maxComparisons === null
+  let credits = null
+  if (isUnlimited) {
+    credits = { limit: null, used: 0, remaining: null, unlimited: true }
+  } else if (pool) {
+    const limit = planConfig?.maxComparisons ?? 5
+    const used = await countUserMonthlyBenchmarks(pool, user.id)
+    credits = { limit, used, remaining: Math.max(0, limit - used), unlimited: false }
+  } else {
+    credits = { limit: planConfig?.maxComparisons ?? 5, used: 0, remaining: planConfig?.maxComparisons ?? 5, unlimited: false }
+  }
   const isPaid = billing.plan === 'starter' || billing.plan === 'pro'
   const isStaff = billing.plan === 'staff'
   const initials = user.email ? user.email.charAt(0).toUpperCase() : '?'
@@ -98,6 +115,26 @@ export default async function AccountPage({ searchParams }: { searchParams: { er
           <div className="panel" style={{ padding: 16 }}>
             <p style={{ fontSize: 11, fontFamily: 'monospace', color: '#888', textTransform: 'uppercase', letterSpacing: 0.5 }}>Plan</p>
             <p style={{ fontSize: 18, fontWeight: 700, marginTop: 4 }}>{billing.planLabel}</p>
+          </div>
+          <div className="panel" style={{ padding: 16 }}>
+            <p style={{ fontSize: 11, fontFamily: 'monospace', color: '#888', textTransform: 'uppercase', letterSpacing: 0.5 }}>Benchmarks left</p>
+            {credits?.unlimited ? (
+              <p style={{ fontSize: 18, fontWeight: 700, marginTop: 4, color: '#15803d' }}>∞</p>
+            ) : (
+              <>
+                <p style={{ fontSize: 18, fontWeight: 700, marginTop: 4, color: credits?.remaining === 0 ? '#dc2626' : 'inherit' }}>
+                  {credits?.remaining} / {credits?.limit}
+                </p>
+                <div style={{ marginTop: 6, height: 4, borderRadius: 2, background: '#e5e7eb', overflow: 'hidden' }}>
+                  <div style={{
+                    height: '100%', borderRadius: 2,
+                    width: `${credits?.limit ? ((credits.remaining / credits.limit) * 100) : 0}%`,
+                    background: credits?.remaining === 0 ? '#dc2626' : (credits?.remaining ?? 0) <= 2 ? '#f59e0b' : '#22c55e',
+                  }} />
+                </div>
+                <p style={{ fontSize: 10, fontFamily: 'monospace', color: '#aaa', marginTop: 4 }}>Resets monthly · {credits?.used} used</p>
+              </>
+            )}
           </div>
           <div className="panel" style={{ padding: 16 }}>
             <p style={{ fontSize: 11, fontFamily: 'monospace', color: '#888', textTransform: 'uppercase', letterSpacing: 0.5 }}>Saved reports</p>

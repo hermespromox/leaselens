@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Pool } from 'pg';
 import { getCurrentConfirmedUser } from '@/lib/supabase/server';
+import { getPlanFromUser, PLANS } from '@/lib/billing';
+import { countUserMonthlyBenchmarks } from '@/lib/credits';
+import { postgresPool } from '@/lib/pool';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -125,16 +128,22 @@ async function recordAnonBenchmark(pool: Pool, ipHash: string): Promise<void> {
   }
 }
 
-async function countUserMonthlyBenchmarks(pool: Pool, userId: string): Promise<number> {
-  try {
-    const res = await pool.query(
-      `SELECT count(*) as cnt FROM leaselense.comparisons WHERE user_id = $1 AND created_at >= date_trunc('month', now())`,
-      [userId]
-    );
-    return Number(res.rows[0]?.cnt) || 0;
-  } catch {
-    return 0;
+async function getCreditsInfo(pool: Pool | null, user: any) {
+  const userPlan = getPlanFromUser(user);
+  const planConfig = PLANS[userPlan as keyof typeof PLANS];
+  const isUnlimited = planConfig?.maxComparisons === null;
+  if (isUnlimited) {
+    return { plan: userPlan, limit: null, used: 0, remaining: null, unlimited: true };
   }
+  const limit = planConfig?.maxComparisons ?? FREE_BENCHMARK_LIMIT;
+  const used = pool ? await countUserMonthlyBenchmarks(pool, user.id) : 0;
+  return {
+    plan: userPlan,
+    limit,
+    used,
+    remaining: Math.max(0, limit - used),
+    unlimited: false,
+  };
 }
 
 function roundUpToNearest(value: number, step: number) {
@@ -188,19 +197,6 @@ async function saveComparisonToRest(criteria: Record<string, unknown>, result: R
     console.warn('Supabase save skipped:', err);
     return null;
   }
-}
-
-function postgresPool() {
-  const connectionString = process.env.LEASELENS_DATABASE_URL || process.env.DATABASE_URL;
-  if (!connectionString) return null;
-  if (!globalThis.leaselensPool) {
-    globalThis.leaselensPool = new Pool({
-      connectionString,
-      max: 1,
-      ssl: { rejectUnauthorized: false },
-    });
-  }
-  return globalThis.leaselensPool;
 }
 
 async function ensureLeaselenseSchema(pool: Pool) {
@@ -571,18 +567,26 @@ export async function POST(req: NextRequest) {
     const pool = postgresPool();
 
     if (user) {
-      // Unlimited for admin/internal accounts
+      const userPlan = getPlanFromUser(user);
+      const planConfig = PLANS[userPlan as keyof typeof PLANS];
+      const isUnlimited = planConfig?.maxComparisons === null;
       const UNLIMITED_EMAILS = ['hassine.achour@gmail.com'];
       if (user.email && UNLIMITED_EMAILS.includes(user.email.toLowerCase())) {
         // No limit, proceed
+      } else if (isUnlimited) {
+        // No limit, proceed
       } else if (pool) {
+        const limit = planConfig?.maxComparisons ?? FREE_BENCHMARK_LIMIT;
         const used = await countUserMonthlyBenchmarks(pool, user.id);
-        if (used >= FREE_BENCHMARK_LIMIT) {
+        const remaining = Math.max(0, limit - used);
+        if (used >= limit) {
           return NextResponse.json({
-            error: 'You have reached your free monthly limit of 5 benchmarks. Upgrade to a paid plan for more.',
+            error: `You have reached your ${planConfig?.label || 'free'} monthly limit of ${limit} benchmarks. Upgrade to a paid plan for more.`,
             locked: true,
-            limit: FREE_BENCHMARK_LIMIT,
+            limit,
             used,
+            remaining: 0,
+            plan: userPlan,
           }, { status: 403 });
         }
       }
@@ -659,6 +663,7 @@ export async function POST(req: NextRequest) {
         id: savedSearch?.id ?? null,
         provider: savedSearch?.provider ?? null,
       },
+      credits: user ? await getCreditsInfo(pool, user) : null,
     };
 
     if (Object.keys(responseHeaders).length) {

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 
-type SessionState = { loggedIn: boolean; confirmed: boolean; email?: string; plan?: string };
+type SessionState = { loggedIn: boolean; confirmed: boolean; email?: string; plan?: string; credits?: { limit: number | null; used: number; remaining: number | null; unlimited: boolean } | null };
 
 const PLAN_BADGE_STYLES: Record<string, { bg: string; color: string; border: string; label: string }> = {
   free: { bg: '#f3f4f6', color: '#4b5563', border: '#e5e7eb', label: 'Free' },
@@ -144,6 +144,30 @@ export default function NavBar({ active, variant = 'marketing' }: { active?: 'co
                       </div>
                       <PlanBadge plan={plan} />
                     </div>
+                    {session?.credits && (
+                      <div style={{ marginTop: 10, padding: '8px 10px', borderRadius: 8, background: '#f9fafb', border: '1px solid #f3f4f6' }}>
+                        {session.credits.unlimited ? (
+                          <p style={{ fontSize: 12, fontFamily: 'monospace', color: '#15803d', fontWeight: 600 }}>∞ Unlimited benchmarks</p>
+                        ) : (
+                          <>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <span style={{ fontSize: 11, fontFamily: 'monospace', color: '#6b7280' }}>Benchmarks left</span>
+                              <span style={{ fontSize: 12, fontFamily: 'monospace', fontWeight: 700, color: session.credits.remaining === 0 ? '#dc2626' : '#111827' }}>
+                                {session.credits.remaining} / {session.credits.limit}
+                              </span>
+                            </div>
+                            <div style={{ marginTop: 6, height: 4, borderRadius: 2, background: '#e5e7eb', overflow: 'hidden' }}>
+                              <div style={{
+                                height: '100%', borderRadius: 2,
+                                width: `${session.credits.limit && session.credits.remaining != null ? (session.credits.remaining / session.credits.limit) * 100 : 0}%`,
+                                background: (session.credits.remaining ?? 0) === 0 ? '#dc2626' : (session.credits.remaining ?? 0) <= 2 ? '#f59e0b' : '#22c55e',
+                              }} />
+                            </div>
+                            <p style={{ fontSize: 10, fontFamily: 'monospace', color: '#9ca3af', marginTop: 4 }}>Resets monthly · {session.credits.used} used</p>
+                          </>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <div style={{ padding: '4px 0' }}>
                     <Link

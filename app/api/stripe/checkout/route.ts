@@ -87,6 +87,7 @@ async function handleCheckout(req: NextRequest) {
       line_items: [{ price: priceId, quantity: 1 }],
       locale: 'en',
       billing_address_collection: 'required',
+      customer_update: { address: 'auto', name: 'auto' },
       tax_id_collection: { enabled: true },
       automatic_tax: { enabled: true },
       subscription_data: {

@@ -15,16 +15,16 @@ function formatDateFR(value: number | string | null) {
   if (!value) return '—';
   const date = typeof value === 'number' ? new Date(value * 1000) : new Date(value);
   if (isNaN(date.getTime())) return '—';
-  return date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
+  return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
 function statusLabel(status: string | null) {
   switch (status) {
-    case 'active': return 'Actif';
-    case 'trialing': return 'Période d\'essai';
-    case 'past_due': return 'Paiement en retard';
-    case 'canceled': return 'Annulé';
-    case 'incomplete': return 'Incomplet';
+    case 'active': return 'Active';
+    case 'trialing': return 'Trial';
+    case 'past_due': return 'Past due';
+    case 'canceled': return 'Canceled';
+    case 'incomplete': return 'Incomplete';
     case 'staff': return 'Staff';
     default: return '—';
   }
@@ -50,7 +50,7 @@ export default async function AccountPage({ searchParams }: { searchParams: { er
           <div>
             <p className="kicker">Account</p>
             <h1>Your workspace</h1>
-            <p className="subtle">Manage your confirmed account and quickly return to saved AskLizy reports.</p>
+            <p className="subtle">Manage your account and quickly return to saved AskLizy reports.</p>
           </div>
           <Link className="primary-link" href="/#compare">New comparison</Link>
         </div>
@@ -88,7 +88,7 @@ export default async function AccountPage({ searchParams }: { searchParams: { er
             <div className="panel workspace-card account-billing-card">
               <div className="card-head">
                 <div>
-                  <p className="kicker">Abonnement</p>
+                  <p className="kicker">Subscription</p>
                   <h2>Plan {billing.planLabel}</h2>
                 </div>
                 <strong className="status-pill compact-status">{statusLabel(billing.status)}</strong>
@@ -96,14 +96,14 @@ export default async function AccountPage({ searchParams }: { searchParams: { er
               <div className="billing-info">
                 {billing.currentPeriodEnd && (
                   <div className="account-status-row">
-                    <span>Prochaine échéance</span>
+                    <span>Next billing date</span>
                     <strong>{formatDateFR(billing.currentPeriodEnd)}</strong>
                   </div>
                 )}
                 {billing.plan === 'pro' && (
                   <div className="account-status-row">
-                    <span>Annulation en fin de période</span>
-                    <strong>{billing.cancelAtPeriodEnd ? 'Oui' : 'Non'}</strong>
+                    <span>Cancels at period end</span>
+                    <strong>{billing.cancelAtPeriodEnd ? 'Yes' : 'No'}</strong>
                   </div>
                 )}
               </div>
@@ -111,23 +111,23 @@ export default async function AccountPage({ searchParams }: { searchParams: { er
                 {billing.plan === 'free' && (
                   <form action="/api/stripe/checkout" method="POST">
                     <input type="hidden" name="plan" value="pro" />
-                    <button type="submit" className="primary">Passer Pro — 29€/mois</button>
+                    <button type="submit" className="primary">Upgrade to Pro — €29/mo</button>
                   </form>
                 )}
                 {billing.plan === 'pro' && (
                   <>
                     <form action="/api/stripe/portal" method="POST">
-                      <button type="submit" className="secondary-link" style={{ width: 'auto' }}>Portail Stripe</button>
+                      <button type="submit" className="secondary-link" style={{ width: 'auto' }}>Stripe portal</button>
                     </form>
                     {!billing.cancelAtPeriodEnd && (
                       <form action="/api/stripe/cancel" method="POST">
-                        <button type="submit" className="secondary-link" style={{ width: 'auto' }}>Annuler l'abonnement</button>
+                        <button type="submit" className="secondary-link" style={{ width: 'auto' }}>Cancel subscription</button>
                       </form>
                     )}
                   </>
                 )}
                 {billing.plan === 'staff' && (
-                  <p className="notice">Votre compte dispose d'un accès staff avec toutes les fonctionnalités.</p>
+                  <p className="notice">Your account has staff access with all features enabled.</p>
                 )}
               </div>
             </div>

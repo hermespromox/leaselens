@@ -79,12 +79,16 @@ async function handleCheckout(req: NextRequest) {
       return NextResponse.redirect(portal.url, 303)
     }
 
+    const taxRateId = process.env.STRIPE_TAX_RATE_ID
     const subscriptionData: Record<string, unknown> = {
       metadata: {
         supabase_user_id: user.id,
         app: 'asklizy',
         plan: 'pro',
       },
+    }
+    if (taxRateId) {
+      subscriptionData.default_tax_rates = [taxRateId]
     }
 
     const session = await stripe.checkout.sessions.create({
@@ -94,6 +98,7 @@ async function handleCheckout(req: NextRequest) {
       locale: 'fr',
       billing_address_collection: 'required',
       tax_id_collection: { enabled: true },
+      automatic_tax: { enabled: true },
       subscription_data: subscriptionData as Stripe.Checkout.SessionCreateParams.SubscriptionData,
       custom_fields: [
         {

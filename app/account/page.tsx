@@ -48,7 +48,7 @@ export default async function AccountPage({ searchParams }: { searchParams: { er
 
   const billing = getBillingProfile(user)
   const invoices = await listRecentInvoices(user)
-  const isPaid = billing.plan === 'pro'
+  const isPaid = billing.plan === 'starter' || billing.plan === 'pro'
   const isStaff = billing.plan === 'staff'
   const initials = user.email ? user.email.charAt(0).toUpperCase() : '?'
   const memberSince = user.created_at
@@ -151,6 +151,18 @@ export default async function AccountPage({ searchParams }: { searchParams: { er
             </span>
           ) : isPaid ? (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {/* Upgrade from Starter to Pro */}
+              {billing.plan === 'starter' && (
+                <form action="/api/stripe/checkout" method="POST">
+                  <input type="hidden" name="plan" value="pro" />
+                  <button type="submit" style={{
+                    borderRadius: 12, background: '#2563eb', border: 'none',
+                    padding: '10px 16px', fontSize: 14, fontWeight: 600, color: '#fff', cursor: 'pointer',
+                  }}>
+                    Upgrade to Pro — €149/mo HT
+                  </button>
+                </form>
+              )}
               {billing.cancelAtPeriodEnd ? (
                 <span style={{
                   display: 'inline-flex', borderRadius: 12, background: '#fffbeb', border: '1px solid #fde68a',
@@ -180,15 +192,26 @@ export default async function AccountPage({ searchParams }: { searchParams: { er
               )}
             </div>
           ) : (
-            <form action="/api/stripe/checkout" method="POST">
-              <input type="hidden" name="plan" value="pro" />
-              <button type="submit" style={{
-                borderRadius: 12, background: '#2563eb', border: 'none',
-                padding: '12px 20px', fontSize: 14, fontWeight: 600, color: '#fff', cursor: 'pointer',
-              }}>
-                Upgrade to Pro — €29/mo
-              </button>
-            </form>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              <form action="/api/stripe/checkout" method="POST">
+                <input type="hidden" name="plan" value="starter" />
+                <button type="submit" style={{
+                  borderRadius: 12, border: '1px solid #e5e5e5', background: '#fff',
+                  padding: '12px 20px', fontSize: 14, fontWeight: 600, color: '#333', cursor: 'pointer',
+                }}>
+                  Get Starter — €99/mo HT
+                </button>
+              </form>
+              <form action="/api/stripe/checkout" method="POST">
+                <input type="hidden" name="plan" value="pro" />
+                <button type="submit" style={{
+                  borderRadius: 12, background: '#2563eb', border: 'none',
+                  padding: '12px 20px', fontSize: 14, fontWeight: 600, color: '#fff', cursor: 'pointer',
+                }}>
+                  Get Pro — €149/mo HT
+                </button>
+              </form>
+            </div>
           )}
           {!isStaff && (
             <p style={{ fontSize: 11, color: '#aaa', fontFamily: 'monospace', marginTop: 12 }}>

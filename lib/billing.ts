@@ -3,7 +3,8 @@ import { createClient } from '@supabase/supabase-js'
 
 export const PLANS = {
   free: { id: 'free', label: 'Free', price: 0, maxComparisons: 3, canExport: false },
-  pro: { id: 'pro', label: 'Pro', price: 29, maxComparisons: null, canExport: true },
+  starter: { id: 'starter', label: 'Starter', price: 99, maxComparisons: 10, canExport: false },
+  pro: { id: 'pro', label: 'Pro', price: 149, maxComparisons: null, canExport: true },
   staff: { id: 'staff', label: 'Staff', price: 0, maxComparisons: null, canExport: true },
 } as const
 
@@ -24,6 +25,7 @@ export function getStripe(): Stripe | null {
 }
 
 export function getStripePriceId(plan: string): string | null {
+  if (plan === 'starter') return process.env.STRIPE_STARTER_PRICE_ID || null
   if (plan === 'pro') return process.env.STRIPE_PRO_PRICE_ID || null
   return null
 }
@@ -33,7 +35,7 @@ export function getPlanFromUser(user: any): string {
   const meta = user.app_metadata || {}
   const plan = meta.asklizy_plan || 'free'
   const status = meta.stripe_subscription_status || null
-  if (plan === 'pro' && ['active', 'trialing'].includes(status)) return 'pro'
+  if (['starter', 'pro'].includes(plan) && ['active', 'trialing'].includes(status)) return plan
   if (isStaffUser(user)) return 'staff'
   return 'free'
 }
@@ -54,6 +56,7 @@ export function getBillingProfile(user: any) {
 
 export function getPlanFromPriceId(priceId: string): string {
   if (!priceId) return 'free'
+  if (priceId === getStripePriceId('starter')) return 'starter'
   if (priceId === getStripePriceId('pro')) return 'pro'
   return 'free'
 }

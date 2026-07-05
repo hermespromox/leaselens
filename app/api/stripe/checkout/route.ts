@@ -18,6 +18,8 @@ export async function POST(req: NextRequest) {
   return handleCheckout(req)
 }
 
+const VALID_PLANS = ['starter', 'pro'] as const
+
 async function handleCheckout(req: NextRequest) {
   const user = await getCurrentConfirmedUser()
   if (!user) {
@@ -27,11 +29,6 @@ async function handleCheckout(req: NextRequest) {
   const stripe = getStripe()
   if (!stripe) {
     return NextResponse.json({ error: 'Stripe is not configured.' }, { status: 500 })
-  }
-
-  const priceId = getStripePriceId('pro')
-  if (!priceId) {
-    return NextResponse.json({ error: 'Pro plan is not configured.' }, { status: 500 })
   }
 
   let body: Record<string, string> = {}
@@ -55,8 +52,13 @@ async function handleCheckout(req: NextRequest) {
   }
 
   const plan = body.plan || 'pro'
-  if (plan !== 'pro') {
+  if (!VALID_PLANS.includes(plan as typeof VALID_PLANS[number])) {
     return NextResponse.json({ error: 'Unknown plan.' }, { status: 400 })
+  }
+
+  const priceId = getStripePriceId(plan)
+  if (!priceId) {
+    return NextResponse.json({ error: `${plan} plan is not configured.` }, { status: 500 })
   }
 
   try {
@@ -74,7 +76,7 @@ async function handleCheckout(req: NextRequest) {
       // Already subscribed — redirect to portal
       const portal = await stripe.billingPortal.sessions.create({
         customer: customerId,
-        return_url: `${origin()}/account?message=Your Pro subscription is already active.`,
+        return_url: `${origin()}/account?message=Your subscription is already active.`,
       })
       return NextResponse.redirect(portal.url, 303)
     }
@@ -91,7 +93,7 @@ async function handleCheckout(req: NextRequest) {
         metadata: {
           supabase_user_id: user.id,
           app: 'asklizy',
-          plan: 'pro',
+          plan,
         },
       } as Stripe.Checkout.SessionCreateParams.SubscriptionData,
       custom_fields: [
@@ -108,7 +110,7 @@ async function handleCheckout(req: NextRequest) {
           optional: true,
         },
       ],
-      success_url: `${origin()}/account?message=Your Pro subscription is now active. Welcome!`,
+      success_url: `${origin()}/account?message=Your ${plan} subscription is now active. Welcome!`,
       cancel_url: `${origin()}/#pricing`,
     })
 

@@ -161,8 +161,8 @@ const methodSteps = [
 
 const tiers = [
   { name: 'Free', original: '', price: '€0', period: '/mo', desc: 'Try it out', items: ['5 benchmarks / month', 'Active POI density', 'Area visitors/day', 'Report view'], popular: false },
-  { name: 'Starter', original: '€49', price: '€19', period: '/mo', desc: 'One-off location checks', items: ['10 benchmarks', 'Active POI density', 'Area visitors/day', 'Report view'], popular: false },
-  { name: 'Pro', original: '€49', price: '€29', period: '/mo', desc: 'For brokers and operators', items: ['100 benchmarks', 'Up to 500 POIs/search', 'Recent comments', 'Saved history'], popular: true },
+  { name: 'Starter', original: '', price: '€99', period: '/mo HT', desc: 'One-off location checks', items: ['10 benchmarks', 'Active POI density', 'Area visitors/day', 'Report view'], popular: false },
+  { name: 'Pro', original: '', price: '€149', period: '/mo HT', desc: 'For brokers and operators', items: ['100 benchmarks', 'Up to 500 POIs/search', 'Recent comments', 'Saved history'], popular: true },
   { name: 'Studio', original: '', price: 'Custom', period: '', desc: 'For teams and APIs', items: ['Team workspace', 'Bulk address lists', 'White-label reports', 'Custom data providers'], popular: false },
 ];
 
@@ -410,9 +410,22 @@ export default function Home() {
               <p>{tier.desc}</p>
               <ul>{tier.items.map(i => <li key={i}>{i}</li>)}</ul>
               <div className="tier-cta">
-                <a className={tier.popular ? 'primary-link' : 'secondary-link'} href="/signup" style={{ width: '100%' }}>
-                  {tier.price === 'Custom' ? 'Contact sales' : `Choose ${tier.name}`}
-                </a>
+                {tier.price === 'Custom' ? (
+                  <a className="secondary-link" href="mailto:hello@asklizy.com" style={{ width: '100%' }}>
+                    Contact sales
+                  </a>
+                ) : tier.name === 'Free' ? (
+                  <a className="secondary-link" href="/signup" style={{ width: '100%' }}>
+                    Choose Free
+                  </a>
+                ) : (
+                  <form action="/api/stripe/checkout" method="POST" style={{ width: '100%' }}>
+                    <input type="hidden" name="plan" value={tier.name.toLowerCase()} />
+                    <button type="submit" className={tier.popular ? 'primary-link' : 'secondary-link'} style={{ width: '100%', border: 'none', cursor: 'pointer', fontSize: 'inherit', padding: '10px 16px', borderRadius: 12 }}>
+                      Choose {tier.name}
+                    </button>
+                  </form>
+                )}
               </div>
             </div>
           ))}

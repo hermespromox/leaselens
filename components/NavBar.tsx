@@ -3,7 +3,27 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
-type SessionState = { loggedIn: boolean; confirmed: boolean; email?: string };
+type SessionState = { loggedIn: boolean; confirmed: boolean; email?: string; plan?: string };
+
+const PLAN_BADGE_STYLES: Record<string, { bg: string; color: string; border: string; label: string }> = {
+  free: { bg: '#f5f5f5', color: '#666', border: '#e5e5e5', label: 'Free' },
+  starter: { bg: '#eff6ff', color: '#2563eb', border: '#bfdbfe', label: 'Starter' },
+  pro: { bg: '#f0fdf4', color: '#15803d', border: '#bbf7d0', label: 'Pro' },
+  staff: { bg: '#faf5ff', color: '#7e22ce', border: '#e9d5ff', label: 'Staff' },
+};
+
+function PlanBadge({ plan }: { plan: string }) {
+  const style = PLAN_BADGE_STYLES[plan] || PLAN_BADGE_STYLES.free;
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', borderRadius: 999,
+      background: style.bg, color: style.color, border: `1px solid ${style.border}`,
+      padding: '2px 10px', fontSize: 11, fontFamily: 'monospace', fontWeight: 600,
+    }}>
+      {style.label}
+    </span>
+  );
+}
 
 export default function NavBar({ active, variant = 'marketing' }: { active?: 'compare' | 'history' | 'account'; variant?: 'marketing' | 'app' }) {
   const [open, setOpen] = useState(false);
@@ -24,6 +44,7 @@ export default function NavBar({ active, variant = 'marketing' }: { active?: 'co
   }, []);
 
   const isAuthed = Boolean(session?.loggedIn && session?.confirmed);
+  const plan = session?.plan || 'free';
   const marketingLinks = [
     { href: '/#product', label: 'Product' },
     { href: '/#pricing', label: 'Pricing' },
@@ -60,6 +81,7 @@ export default function NavBar({ active, variant = 'marketing' }: { active?: 'co
           )}
           <Link href="/history" className={active === 'history' ? 'nav-active' : undefined}>History</Link>
           {variant === 'marketing' && <a href="/#legal">Legal</a>}
+          {isAuthed && <PlanBadge plan={plan} />}
           {authControl}
         </div>
 
@@ -81,6 +103,9 @@ export default function NavBar({ active, variant = 'marketing' }: { active?: 'co
               <Link href="/#compare" onClick={() => setOpen(false)}>Compare</Link>
             )}
             <Link href="/history" onClick={() => setOpen(false)}>History</Link>
+            {isAuthed && (
+              <div style={{ padding: '8px 14px' }}><PlanBadge plan={plan} /></div>
+            )}
             {isLoadingSession ? (
               <span className="nav-sheet-loading">Checking session…</span>
             ) : isAuthed ? (

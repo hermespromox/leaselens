@@ -570,10 +570,7 @@ export async function POST(req: NextRequest) {
       const userPlan = getPlanFromUser(user);
       const planConfig = PLANS[userPlan as keyof typeof PLANS];
       const isUnlimited = planConfig?.maxComparisons === null;
-      const UNLIMITED_EMAILS = ['hassine.achour@gmail.com'];
-      if (user.email && UNLIMITED_EMAILS.includes(user.email.toLowerCase())) {
-        // No limit, proceed
-      } else if (isUnlimited) {
+      if (isUnlimited) {
         // No limit, proceed
       } else if (pool) {
         const limit = planConfig?.maxComparisons ?? FREE_BENCHMARK_LIMIT;

@@ -1,12 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 
 type SessionState = { loggedIn: boolean; confirmed: boolean; email?: string; plan?: string };
 
 const PLAN_BADGE_STYLES: Record<string, { bg: string; color: string; border: string; label: string }> = {
-  free: { bg: '#f5f5f5', color: '#666', border: '#e5e5e5', label: 'Free' },
+  free: { bg: '#f3f4f6', color: '#4b5563', border: '#e5e7eb', label: 'Free' },
   starter: { bg: '#eff6ff', color: '#2563eb', border: '#bfdbfe', label: 'Starter' },
   pro: { bg: '#f0fdf4', color: '#15803d', border: '#bbf7d0', label: 'Pro' },
   staff: { bg: '#faf5ff', color: '#7e22ce', border: '#e9d5ff', label: 'Staff' },
@@ -18,16 +19,26 @@ function PlanBadge({ plan }: { plan: string }) {
     <span style={{
       display: 'inline-flex', alignItems: 'center', borderRadius: 999,
       background: style.bg, color: style.color, border: `1px solid ${style.border}`,
-      padding: '2px 10px', fontSize: 11, fontFamily: 'monospace', fontWeight: 600,
+      padding: '1px 8px', fontSize: 10, fontFamily: 'monospace', fontWeight: 600,
+      textTransform: 'uppercase', letterSpacing: '0.04em',
     }}>
       {style.label}
     </span>
   );
 }
 
+function getEmailUsername(email?: string) {
+  if (!email) return 'Account';
+  return String(email).split('@')[0] || email;
+}
+
 export default function NavBar({ active, variant = 'marketing' }: { active?: 'compare' | 'history' | 'account'; variant?: 'marketing' | 'app' }) {
   const [open, setOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [session, setSession] = useState<SessionState | null>(null);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const router = useRouter();
   const isLoadingSession = session === null;
 
   useEffect(() => {
@@ -38,31 +49,37 @@ export default function NavBar({ active, variant = 'marketing' }: { active?: 'co
         if (!cancelled && data) setSession(data);
       })
       .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
   const isAuthed = Boolean(session?.loggedIn && session?.confirmed);
   const plan = session?.plan || 'free';
+  const username = getEmailUsername(session?.email);
+  const initials = username ? username.charAt(0).toUpperCase() : '?';
+
   const marketingLinks = [
     { href: '/#product', label: 'Product' },
     { href: '/#pricing', label: 'Pricing' },
   ];
   const contextLinks = variant === 'marketing' ? marketingLinks : [];
-  const authControl = isLoadingSession ? (
-    <span className="nav-auth-loading" aria-label="Checking session…" aria-live="polite" />
-  ) : isAuthed ? (
-    <Link href="/account" className={`nav-account ${active === 'account' ? 'nav-active' : ''}`} title={session?.email}>
-      <span className="material-symbols-outlined nav-account-icon" aria-hidden="true">account_circle</span>
-      <span className="nav-account-copy">
-        <strong>Account</strong>
-        <span>{session?.email}</span>
-      </span>
-    </Link>
-  ) : (
-    <Link href="/login" className="nav-cta">Log in</Link>
-  );
+
+  async function handleSignOut(e: React.FormEvent) {
+    e.preventDefault();
+    setLoggingOut(true);
+    try {
+      await fetch('/api/auth/signout', { method: 'POST' }).catch(() => {});
+    } catch {}
+    router.push('/');
+    router.refresh();
+  }
 
   return (
     <nav className="nav">
@@ -81,39 +98,141 @@ export default function NavBar({ active, variant = 'marketing' }: { active?: 'co
           )}
           <Link href="/history" className={active === 'history' ? 'nav-active' : undefined}>History</Link>
           {variant === 'marketing' && <a href="/#legal">Legal</a>}
-          {isAuthed && <PlanBadge plan={plan} />}
-          {authControl}
+
+          {isLoadingSession ? (
+            <span className="nav-auth-loading" aria-label="Checking session…" aria-live="polite" />
+          ) : isAuthed ? (
+            <div className="relative" ref={ref}>
+              <button
+                onClick={() => setOpen(!open)}
+                title={session?.email}
+                className="flex items-center gap-2 rounded-full hover:bg-gray-100 transition-colors py-1 pl-1 pr-2"
+                style={{ display: 'flex', alignItems: 'center', gap: 8, borderRadius: 999, padding: '4px 8px 4px 4px', cursor: 'pointer', background: 'transparent', border: 'none' }}
+              >
+                {/* Avatar */}
+                <span style={{
+                  width: 28, height: 28, borderRadius: '50%', background: '#1a1a1a',
+                  color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 12, fontWeight: 600, flexShrink: 0,
+                }}>{initials}</span>
+                {/* Username */}
+                <span className="hidden sm:inline" style={{
+                  fontSize: 12, fontFamily: 'monospace', color: '#4b5563',
+                  maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                }}>{username}</span>
+                <PlanBadge plan={plan} />
+                {/* Chevron */}
+                <svg style={{ width: 14, height: 14, color: '#9ca3af', transition: 'transform 0.15s', transform: open ? 'rotate(180deg)' : 'none' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {/* Dropdown */}
+              {open && (
+                <div style={{
+                  position: 'absolute', right: 0, marginTop: 8, width: 224,
+                  background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12,
+                  boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)',
+                  overflow: 'hidden', zIndex: 50,
+                }}>
+                  <div style={{ padding: '12px 16px', borderBottom: '1px solid #f3f4f6' }}>
+                    <p style={{ fontSize: 11, fontFamily: 'monospace', color: '#9ca3af' }}>Signed in as</p>
+                    <div style={{ marginTop: 4, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+                      <div style={{ minWidth: 0 }}>
+                        <p style={{ fontSize: 14, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{username}</p>
+                        <p style={{ fontSize: 11, fontFamily: 'monospace', color: '#9ca3af', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{session?.email}</p>
+                      </div>
+                      <PlanBadge plan={plan} />
+                    </div>
+                  </div>
+                  <div style={{ padding: '4px 0' }}>
+                    <Link
+                      href="/account"
+                      onClick={() => setOpen(false)}
+                      style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 16px', fontSize: 14, color: '#374151', textDecoration: 'none' }}
+                      className="hover:bg-gray-50"
+                    >
+                      <svg style={{ width: 16, height: 16, color: '#9ca3af' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                      My account
+                    </Link>
+                    <Link
+                      href="/history"
+                      onClick={() => setOpen(false)}
+                      style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 16px', fontSize: 14, color: '#374151', textDecoration: 'none' }}
+                      className="hover:bg-gray-50"
+                    >
+                      <svg style={{ width: 16, height: 16, color: '#9ca3af' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      History
+                    </Link>
+                  </div>
+                  <div style={{ borderTop: '1px solid #f3f4f6', padding: '4px 0' }}>
+                    <form onSubmit={handleSignOut}>
+                      <button
+                        type="submit"
+                        disabled={loggingOut}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 12, width: '100%',
+                          padding: '8px 16px', fontSize: 14, color: '#dc2626',
+                          background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left',
+                        }}
+                        className="hover:bg-red-50"
+                      >
+                        <svg style={{ width: 16, height: 16 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                        {loggingOut ? 'Signing out…' : 'Log out'}
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <Link href="/login" className="nav-cta">Log in</Link>
+          )}
         </div>
 
         <button
           className="nav-toggle"
-          aria-label={open ? 'Close menu' : 'Open menu'}
-          aria-expanded={open}
-          onClick={() => setOpen((v) => !v)}
+          aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+          aria-expanded={mobileOpen}
+          onClick={() => setMobileOpen((v) => !v)}
         >
-          <span className="material-symbols-outlined">{open ? 'close' : 'menu'}</span>
+          <span className="material-symbols-outlined">{mobileOpen ? 'close' : 'menu'}</span>
         </button>
 
-        {open && (
+        {mobileOpen && (
           <div className="nav-sheet">
             {contextLinks.map((link) => (
-              <a key={link.href} href={link.href} onClick={() => setOpen(false)}>{link.label}</a>
+              <a key={link.href} href={link.href} onClick={() => setMobileOpen(false)}>{link.label}</a>
             ))}
             {variant === 'app' && (
-              <Link href="/#compare" onClick={() => setOpen(false)}>Compare</Link>
+              <Link href="/#compare" onClick={() => setMobileOpen(false)}>Compare</Link>
             )}
-            <Link href="/history" onClick={() => setOpen(false)}>History</Link>
-            {isAuthed && (
-              <div style={{ padding: '8px 14px' }}><PlanBadge plan={plan} /></div>
-            )}
+            <Link href="/history" onClick={() => setMobileOpen(false)}>History</Link>
             {isLoadingSession ? (
               <span className="nav-sheet-loading">Checking session…</span>
             ) : isAuthed ? (
-              <Link href="/account" onClick={() => setOpen(false)}>Account · {session?.email}</Link>
+              <>
+                <div style={{ padding: '8px 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{
+                    width: 28, height: 28, borderRadius: '50%', background: '#1a1a1a',
+                    color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 12, fontWeight: 600,
+                  }}>{initials}</span>
+                  <PlanBadge plan={plan} />
+                </div>
+                <Link href="/account" onClick={() => setMobileOpen(false)}>My account · {session?.email}</Link>
+                <Link href="/login" onClick={() => setMobileOpen(false)} style={{ color: '#dc2626' }}>Log out</Link>
+              </>
             ) : (
-              <Link href="/login" onClick={() => setOpen(false)}>Log in</Link>
+              <Link href="/login" onClick={() => setMobileOpen(false)}>Log in</Link>
             )}
-            {variant === 'marketing' && <a href="/#legal" onClick={() => setOpen(false)}>Legal</a>}
+            {variant === 'marketing' && <a href="/#legal" onClick={() => setMobileOpen(false)}>Legal</a>}
           </div>
         )}
       </div>

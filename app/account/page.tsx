@@ -3,11 +3,31 @@ import { redirect } from 'next/navigation';
 import { logoutAction } from '@/app/auth/actions';
 import { getCurrentConfirmedUser } from '@/lib/supabase/server';
 import { getComparisonHistory, getWorkspaceSummary } from '@/lib/leaselense';
+import { getBillingProfile } from '@/lib/billing';
 import NavBar from '@/components/NavBar';
 
 function formatDate(value: string | null) {
   if (!value) return 'No saved reports yet';
   return new Date(value).toLocaleString();
+}
+
+function formatDateFR(value: number | string | null) {
+  if (!value) return '—';
+  const date = typeof value === 'number' ? new Date(value * 1000) : new Date(value);
+  if (isNaN(date.getTime())) return '—';
+  return date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
+}
+
+function statusLabel(status: string | null) {
+  switch (status) {
+    case 'active': return 'Actif';
+    case 'trialing': return 'Période d\'essai';
+    case 'past_due': return 'Paiement en retard';
+    case 'canceled': return 'Annulé';
+    case 'incomplete': return 'Incomplet';
+    case 'staff': return 'Staff';
+    default: return '—';
+  }
 }
 
 export default async function AccountPage({ searchParams }: { searchParams: { error?: string; message?: string } }) {
@@ -18,6 +38,8 @@ export default async function AccountPage({ searchParams }: { searchParams: { er
     getWorkspaceSummary(user.id),
     getComparisonHistory(user.id, 4),
   ]);
+
+  const billing = getBillingProfile(user);
 
   return (
     <main>
@@ -63,6 +85,53 @@ export default async function AccountPage({ searchParams }: { searchParams: { er
           </aside>
 
           <div className="account-content">
+            <div className="panel workspace-card account-billing-card">
+              <div className="card-head">
+                <div>
+                  <p className="kicker">Abonnement</p>
+                  <h2>Plan {billing.planLabel}</h2>
+                </div>
+                <strong className="status-pill compact-status">{statusLabel(billing.status)}</strong>
+              </div>
+              <div className="billing-info">
+                {billing.currentPeriodEnd && (
+                  <div className="account-status-row">
+                    <span>Prochaine échéance</span>
+                    <strong>{formatDateFR(billing.currentPeriodEnd)}</strong>
+                  </div>
+                )}
+                {billing.plan === 'pro' && (
+                  <div className="account-status-row">
+                    <span>Annulation en fin de période</span>
+                    <strong>{billing.cancelAtPeriodEnd ? 'Oui' : 'Non'}</strong>
+                  </div>
+                )}
+              </div>
+              <div className="billing-actions">
+                {billing.plan === 'free' && (
+                  <form action="/api/stripe/checkout" method="POST">
+                    <input type="hidden" name="plan" value="pro" />
+                    <button type="submit" className="primary">Passer Pro — 29€/mois</button>
+                  </form>
+                )}
+                {billing.plan === 'pro' && (
+                  <>
+                    <form action="/api/stripe/portal" method="POST">
+                      <button type="submit" className="secondary-link" style={{ width: 'auto' }}>Portail Stripe</button>
+                    </form>
+                    {!billing.cancelAtPeriodEnd && (
+                      <form action="/api/stripe/cancel" method="POST">
+                        <button type="submit" className="secondary-link" style={{ width: 'auto' }}>Annuler l'abonnement</button>
+                      </form>
+                    )}
+                  </>
+                )}
+                {billing.plan === 'staff' && (
+                  <p className="notice">Votre compte dispose d'un accès staff avec toutes les fonctionnalités.</p>
+                )}
+              </div>
+            </div>
+
             <div className="account-stat-grid">
               <div className="panel workspace-card stat-card account-stat-card">
                 <span>Saved reports</span>

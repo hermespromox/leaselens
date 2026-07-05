@@ -2,11 +2,11 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'AskLizy — Ask before you sign the lease',
-  description: 'Compare two addresses using local POIs, reviews, ratings, competition and visitor estimates before signing a lease.',
+  title: 'AskLizy — Posez la question avant de signer le bail',
+  description: 'Comparez deux adresses grâce aux POIs locaux, avis, notes, concurrence et estimations de visiteurs avant de signer un bail.',
   openGraph: {
     title: 'AskLizy',
-    description: 'AI location intelligence for lease decisions.',
+    description: 'Intelligence de localisation par IA pour vos décisions de bail.',
     url: 'https://asklizy.com',
     siteName: 'AskLizy',
   },
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="fr">
       <head>
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,500,0,0" />
       </head>

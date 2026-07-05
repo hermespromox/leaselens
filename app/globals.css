@@ -46,6 +46,10 @@ button:focus-visible, a:focus-visible { outline-offset: 2px; }
 .nav-active { color: var(--ink) !important; font-weight: 800; }
 .nav-cta { border: 1px solid var(--line); border-radius: 999px; padding: 8px 16px; color: var(--ink) !important; background: #fff; font-weight: 750; }
 .nav-cta:hover { border-color: var(--accent); }
+.lang-toggle { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; background: #fff; }
+.lang-btn { border: none; background: transparent; padding: 4px 10px; font-size: 12px; font-weight: 750; color: var(--muted); cursor: pointer; line-height: 1.4; }
+.lang-btn:hover { color: var(--ink); }
+.lang-active { background: var(--accent); color: #fff !important; }
 .nav-auth-loading { width: 112px; height: 36px; border: 1px solid var(--line); border-radius: 999px; background: linear-gradient(90deg, #fff, var(--soft), #fff); background-size: 220% 100%; animation: navPulse 1.2s ease-in-out infinite; opacity: .82; }
 .nav-account { display: inline-flex; align-items: center; gap: 9px; border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px 6px 7px; background: #fff; color: var(--ink) !important; font-weight: 700; max-width: 230px; min-height: 38px; box-shadow: 0 8px 24px rgba(16,20,24,.05); }
 .nav-account-copy { display: grid; min-width: 0; line-height: 1.05; }

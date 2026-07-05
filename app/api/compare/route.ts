@@ -68,7 +68,6 @@ const ACTIVE_PLACE_DISTANCE_LIMIT_METERS = 1000;
 const AREA_VISITORS_ROUNDING_STEP = 500;
 const DEFAULT_CATEGORY = 'restaurant';
 const ANON_BENCHMARK_LIMIT = 1;
-const FREE_BENCHMARK_LIMIT = 5;
 const ANON_COOKIE_NAME = 'asklizy_anon';
 const ANON_COOKIE_SECRET = process.env.ANON_COOKIE_SECRET || 'asklizy-anon-signing-key-2024';
 
@@ -135,7 +134,7 @@ async function getCreditsInfo(pool: Pool | null, user: any) {
   if (isUnlimited) {
     return { plan: userPlan, limit: null, used: 0, remaining: null, unlimited: true };
   }
-  const limit = planConfig?.maxComparisons ?? FREE_BENCHMARK_LIMIT;
+  const limit = planConfig?.maxComparisons ?? PLANS.free.maxComparisons;
   const used = pool ? await countUserMonthlyBenchmarks(pool, user.id) : 0;
   return {
     plan: userPlan,
@@ -573,7 +572,7 @@ export async function POST(req: NextRequest) {
       if (isUnlimited) {
         // No limit, proceed
       } else if (pool) {
-        const limit = planConfig?.maxComparisons ?? FREE_BENCHMARK_LIMIT;
+        const limit = planConfig?.maxComparisons ?? PLANS.free.maxComparisons;
         const used = await countUserMonthlyBenchmarks(pool, user.id);
         const remaining = Math.max(0, limit - used);
         if (used >= limit) {

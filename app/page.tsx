@@ -436,6 +436,13 @@ export default function Home() {
         <p className="kicker">Legal</p>
         <h2>Transparent by design.</h2>
         <p>AskLizy is a decision-support tool. It does not provide certified footfall, legal, real-estate or investment advice. Maps and review data are provided through third-party APIs and may be incomplete, delayed or rate-limited. Users should verify critical decisions with site visits, brokers, local market experts and official sources.</p>
+        <p style={{marginTop: '12px'}}>
+          <a href="/legal" className="secondary-link">Legal Notice</a>
+          <span style={{margin: '0 8px', color: 'var(--muted)'}}>·</span>
+          <a href="/privacy" className="secondary-link">Privacy Policy</a>
+          <span style={{margin: '0 8px', color: 'var(--muted)'}}>·</span>
+          <a href="/terms" className="secondary-link">Terms of Service</a>
+        </p>
       </section>
 
       <footer className="footer shell">
@@ -457,7 +464,9 @@ export default function Home() {
           </div>
           <div className="footer-col">
             <span>Legal</span>
-            <a href="#legal">Legal</a>
+            <a href="/legal">Legal Notice</a>
+            <a href="/privacy">Privacy Policy</a>
+            <a href="/terms">Terms of Service</a>
           </div>
         </div>
       </footer>

@@ -13,8 +13,8 @@ function origin() {
 const VALID_PLANS = ['starter', 'pro'] as const
 
 const CHECKOUT_PLAN_COPY: Record<string, string> = {
-  starter: 'AskLizy Starter: 10 benchmarks per month with active POI density, area visitors and report view.',
-  pro: 'AskLizy Pro: 100 benchmarks per month, up to 500 POIs per search, recent comments, saved history and full export.',
+  starter: 'AskLizy Starter: 500 benchmarks per month with full report view, scoring, and saved history.',
+  pro: 'AskLizy Pro: 1,500 benchmarks per month, full report view, export, scoring, saved history, and priority access.',
 }
 
 function safePlan(value: string | undefined): string | null {

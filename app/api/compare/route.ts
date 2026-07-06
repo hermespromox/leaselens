@@ -135,7 +135,7 @@ async function getCreditsInfo(pool: Pool | null, user: any) {
     return { plan: userPlan, limit: null, used: 0, remaining: null, unlimited: true };
   }
   const limit = planConfig?.maxComparisons ?? PLANS.free.maxComparisons;
-  const used = pool ? await countUserMonthlyBenchmarks(pool, user.id) : 0;
+  const used = await countUserMonthlyBenchmarks(pool, user.id);
   return {
     plan: userPlan,
     limit,

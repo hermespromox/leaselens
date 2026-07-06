@@ -58,12 +58,10 @@ export default async function AccountPage({ searchParams }: { searchParams: { er
   let credits = null
   if (isUnlimited) {
     credits = { limit: null, used: 0, remaining: null, unlimited: true }
-  } else if (pool) {
+  } else {
     const limit = planConfig?.maxComparisons ?? 5
     const used = await countUserMonthlyBenchmarks(pool, user.id)
     credits = { limit, used, remaining: Math.max(0, limit - used), unlimited: false }
-  } else {
-    credits = { limit: planConfig?.maxComparisons ?? 5, used: 0, remaining: planConfig?.maxComparisons ?? 5, unlimited: false }
   }
   const isPaid = billing.plan === 'starter' || billing.plan === 'pro'
   const isStaff = billing.plan === 'staff'

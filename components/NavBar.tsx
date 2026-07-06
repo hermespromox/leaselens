@@ -75,10 +75,10 @@ export default function NavBar({ active, variant = 'marketing' }: { active?: 'co
     e.preventDefault();
     setLoggingOut(true);
     try {
-      await fetch('/api/auth/signout', { method: 'POST' }).catch(() => {});
+      await fetch('/api/auth/signout', { method: 'POST' });
     } catch {}
-    router.push('/');
-    router.refresh();
+    // Hard reload to clear all client state
+    window.location.href = '/';
   }
 
   return (

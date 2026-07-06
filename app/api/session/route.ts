@@ -20,11 +20,9 @@ export async function GET() {
   const limit = planConfig?.maxComparisons ?? PLANS.free.maxComparisons;
   if (isUnlimited) {
     credits = { plan, limit: null, used: 0, remaining: null, unlimited: true };
-  } else if (pool) {
+  } else {
     const used = await countUserMonthlyBenchmarks(pool, user.id);
     credits = { plan, limit, used, remaining: Math.max(0, limit - used), unlimited: false };
-  } else {
-    credits = { plan, limit, used: 0, remaining: limit, unlimited: false };
   }
 
   return NextResponse.json({

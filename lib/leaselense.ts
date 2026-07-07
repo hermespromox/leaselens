@@ -45,6 +45,7 @@ async function fetchLeaselense<T>(path: string): Promise<T[]> {
       Authorization: `Bearer ${config.key}`,
       'Accept-Profile': 'leaselense',
       'Content-Profile': 'leaselense',
+      'User-Agent': 'Mozilla/5.0 AskLizy/1.0',
     },
     cache: 'no-store',
   });

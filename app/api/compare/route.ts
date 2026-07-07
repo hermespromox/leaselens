@@ -175,6 +175,7 @@ async function postLeaselenseRest(path: string, body: unknown, prefer = 'return=
       'Content-Type': 'application/json',
       'Accept-Profile': 'leaselense',
       'Content-Profile': 'leaselense',
+      'User-Agent': 'Mozilla/5.0 AskLizy/1.0',
       Prefer: prefer,
     },
     body: JSON.stringify(body),

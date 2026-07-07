@@ -35,10 +35,17 @@ export async function countUserMonthlyBenchmarks(pool: Pool | null, userId: stri
         Authorization: `Bearer ${config.key}`,
         'Accept-Profile': 'leaselense',
         'Content-Profile': 'leaselense',
+        'User-Agent': 'Mozilla/5.0 AskLizy/1.0',
+        Prefer: 'count=exact',
+        Range: '0-0',
+        'Range-Unit': 'items',
       },
       cache: 'no-store',
     });
     if (!res.ok) return 0;
+    const contentRange = res.headers.get('content-range');
+    const exactCount = contentRange?.match(/\/(\d+)$/)?.[1];
+    if (exactCount) return Number(exactCount) || 0;
     const rows = await res.json();
     return Array.isArray(rows) ? rows.length : 0;
   } catch {

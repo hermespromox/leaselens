@@ -163,39 +163,85 @@ function supabaseConfig() {
   return { url: url.replace(/\/$/, ''), key };
 }
 
-async function saveComparisonToRest(criteria: Record<string, unknown>, result: Record<string, unknown>) {
+async function postLeaselenseRest(path: string, body: unknown, prefer = 'return=minimal') {
   const config = supabaseConfig();
   if (!config) return null;
 
-  try {
-    const res = await fetch(`${config.url}/rest/v1/searches`, {
-      method: 'POST',
-      headers: {
-        apikey: config.key,
-        Authorization: `Bearer ${config.key}`,
-        'Content-Type': 'application/json',
-        Prefer: 'return=representation',
-      },
-      body: JSON.stringify({
-        url: 'leaselens:compare',
-        criteria,
-        result,
-      }),
-      cache: 'no-store',
-    });
+  const res = await fetch(`${config.url}/rest/v1/${path}`, {
+    method: 'POST',
+    headers: {
+      apikey: config.key,
+      Authorization: `Bearer ${config.key}`,
+      'Content-Type': 'application/json',
+      'Accept-Profile': 'leaselense',
+      'Content-Profile': 'leaselense',
+      Prefer: prefer,
+    },
+    body: JSON.stringify(body),
+    cache: 'no-store',
+  });
 
-    if (!res.ok) {
-      const text = await res.text();
-      console.warn(`Supabase save skipped: ${res.status} ${text.slice(0, 180)}`);
-      return null;
-    }
-
-    const rows = await res.json();
-    return Array.isArray(rows) ? rows[0]?.id ?? null : rows?.id ?? null;
-  } catch (err) {
-    console.warn('Supabase save skipped:', err);
-    return null;
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Supabase REST ${path} failed: ${res.status} ${text.slice(0, 180)}`);
   }
+
+  if (prefer.includes('return=representation')) return res.json();
+  return null;
+}
+
+async function saveComparisonToRest(criteria: Record<string, unknown>, result: ComparisonResult, userId: string | null) {
+  const config = supabaseConfig();
+  if (!config) return null;
+
+  const placeA = String(criteria.placeA || result.sides.A.input || 'Unknown A');
+  const placeB = String(criteria.placeB || result.sides.B.input || 'Unknown B');
+  const country = String(criteria.country || 'fr');
+  const comparisonRows = await postLeaselenseRest('comparisons', {
+    user_id: userId,
+    place_a: placeA,
+    place_b: placeB,
+    category: String(criteria.category || result.category || DEFAULT_CATEGORY),
+    country,
+    radius_meters: Number(criteria.radiusMeters || result.radiusMeters || 800),
+    review_window_days: Number(criteria.reviewWindowDays || result.reviewWindowDays || REVIEW_WINDOW_DAYS),
+    max_results: Number(criteria.maxResults || result.maxResults || 500),
+    winner: result.winner,
+    summary: result.summary,
+    score_a: result.sides.A.score,
+    score_b: result.sides.B.score,
+    result,
+  }, 'return=representation') as Array<{ id: number }> | null;
+
+  const comparisonId = Array.isArray(comparisonRows) ? comparisonRows[0]?.id : null;
+  if (!comparisonId) return null;
+
+  const locations = [result.sides.A, result.sides.B].map((side) => ({
+    comparison_id: comparisonId,
+    label: side.label,
+    input: side.input,
+    latitude: side.coordinates?.lat ?? null,
+    longitude: side.coordinates?.lng ?? null,
+    score: side.score,
+    metrics: side.metrics,
+    top_places: side.topPlaces,
+    recent_comments: side.recentComments,
+  }));
+  await postLeaselenseRest('comparison_locations', locations);
+
+  const reviews = [result.sides.A, result.sides.B].flatMap((side) =>
+    side.recentComments.map((review) => ({
+      comparison_id: comparisonId,
+      location_label: side.label,
+      place: review.place,
+      rating: review.rating ?? null,
+      review_date: review.date || null,
+      text_excerpt: review.text || null,
+    }))
+  );
+  if (reviews.length) await postLeaselenseRest('reviews_sampled', reviews);
+
+  return comparisonId;
 }
 
 async function ensureLeaselenseSchema(pool: Pool) {
@@ -342,7 +388,7 @@ async function saveComparison(criteria: Record<string, unknown>, result: Compari
     console.warn('Postgres save skipped:', err);
   }
 
-  const restId = await saveComparisonToRest(criteria, result as unknown as Record<string, unknown>);
+  const restId = await saveComparisonToRest(criteria, result, userId);
   return restId ? { provider: 'rest', id: restId } : null;
 }
 
@@ -571,7 +617,7 @@ export async function POST(req: NextRequest) {
       const isUnlimited = planConfig?.maxComparisons === null;
       if (isUnlimited) {
         // No limit, proceed
-      } else if (pool) {
+      } else {
         const limit = planConfig?.maxComparisons ?? PLANS.free.maxComparisons;
         const used = await countUserMonthlyBenchmarks(pool, user.id);
         const remaining = Math.max(0, limit - used);
@@ -640,10 +686,10 @@ export async function POST(req: NextRequest) {
 
     // ── Increment anonymous counter ──
     let responseHeaders: Record<string, string> = {};
-    if (!user && pool) {
+    if (!user) {
       const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.headers.get('x-real-ip') || '0.0.0.0';
       const ipHash = hashIp(ip);
-      await recordAnonBenchmark(pool, ipHash);
+      if (pool) await recordAnonBenchmark(pool, ipHash);
 
       const anonCookie = req.cookies.get(ANON_COOKIE_NAME)?.value;
       const cookieData = verifyAnonCookie(anonCookie);

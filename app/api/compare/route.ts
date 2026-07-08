@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Pool } from 'pg';
 import { getCurrentConfirmedUser } from '@/lib/supabase/server';
 import { getPlanFromUser, PLANS } from '@/lib/billing';
-import { countUserMonthlyBenchmarks } from '@/lib/credits';
+import { countUserMonthlyBenchmarks, incrementUserMonthlyBenchmarks } from '@/lib/credits';
 import { postgresPool } from '@/lib/pool';
 
 export const dynamic = 'force-dynamic';
@@ -684,6 +684,16 @@ export async function POST(req: NextRequest) {
       reviewWindowDays,
       maxResults,
     }, result, user?.id ?? null);
+
+    // ── Persist credit count in app_metadata (fast, bypasses REST API) ──
+    let newCount: number | null = null;
+    if (user) {
+      try {
+        newCount = await incrementUserMonthlyBenchmarks(user.id);
+      } catch (err) {
+        console.error('[compare] Failed to increment benchmark count:', err);
+      }
+    }
 
     // ── Increment anonymous counter ──
     let responseHeaders: Record<string, string> = {};

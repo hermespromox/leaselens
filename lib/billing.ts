@@ -8,7 +8,7 @@ export const PLANS = {
   staff: { id: 'staff', label: 'Staff', price: 0, maxComparisons: null, canExport: true },
 } as const
 
-const BUILT_IN_STAFF_EMAILS: string[] = ['hassine.achour@gmail.com', 'hassine.achour+2@gmail.com']
+const BUILT_IN_STAFF_EMAILS: string[] = ['hassine.achour@gmail.com']
 
 export function isStaffUser(user: any): boolean {
   const meta = user?.app_metadata || {}

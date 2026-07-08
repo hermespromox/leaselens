@@ -5,6 +5,8 @@ import { getPlanFromUser, PLANS } from '@/lib/billing';
 import { countUserMonthlyBenchmarks, incrementUserMonthlyBenchmarks } from '@/lib/credits';
 import { postgresPool } from '@/lib/pool';
 
+import { createSupabaseAdminClient } from '@/lib/supabase/admin';
+
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -192,13 +194,13 @@ async function postLeaselenseRest(path: string, body: unknown, prefer = 'return=
 }
 
 async function saveComparisonToRest(criteria: Record<string, unknown>, result: ComparisonResult, userId: string | null) {
-  const config = supabaseConfig();
-  if (!config) return null;
+  let supabase;
+  try { supabase = createSupabaseAdminClient(); } catch { return null; }
 
   const placeA = String(criteria.placeA || result.sides.A.input || 'Unknown A');
   const placeB = String(criteria.placeB || result.sides.B.input || 'Unknown B');
   const country = String(criteria.country || 'fr');
-  const comparisonRows = await postLeaselenseRest('comparisons', {
+  const { data: comparisonRows, error: cmpErr } = await (supabase.from('comparisons') as any).insert({
     user_id: userId,
     place_a: placeA,
     place_b: placeB,
@@ -212,9 +214,10 @@ async function saveComparisonToRest(criteria: Record<string, unknown>, result: C
     score_a: result.sides.A.score,
     score_b: result.sides.B.score,
     result,
-  }, 'return=representation') as Array<{ id: number }> | null;
+  }).select('id');
 
-  const comparisonId = Array.isArray(comparisonRows) ? comparisonRows[0]?.id : null;
+  if (cmpErr) { console.error('[compare] save comparison failed:', cmpErr); return null; }
+  const comparisonId = Array.isArray(comparisonRows) && comparisonRows.length > 0 ? comparisonRows[0]?.id : null;
   if (!comparisonId) return null;
 
   const locations = [result.sides.A, result.sides.B].map((side) => ({
@@ -228,7 +231,8 @@ async function saveComparisonToRest(criteria: Record<string, unknown>, result: C
     top_places: side.topPlaces,
     recent_comments: side.recentComments,
   }));
-  await postLeaselenseRest('comparison_locations', locations);
+  const { error: locErr } = await (supabase.from('comparison_locations') as any).insert(locations);
+  if (locErr) console.error('[compare] save locations failed:', locErr);
 
   const reviews = [result.sides.A, result.sides.B].flatMap((side) =>
     side.recentComments.map((review) => ({
@@ -240,7 +244,10 @@ async function saveComparisonToRest(criteria: Record<string, unknown>, result: C
       text_excerpt: review.text || null,
     }))
   );
-  if (reviews.length) await postLeaselenseRest('reviews_sampled', reviews);
+  if (reviews.length) {
+    const { error: revErr } = await (supabase.from('reviews_sampled') as any).insert(reviews);
+    if (revErr) console.error('[compare] save reviews failed:', revErr);
+  }
 
   return comparisonId;
 }

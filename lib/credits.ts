@@ -2,7 +2,7 @@ import { Pool } from 'pg';
 
 function supabaseConfig() {
   const url = (process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || '').replace(/\/$/, '');
-  const key = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
   if (!url || !key) return null;
   return { url, key };
 }
@@ -30,6 +30,8 @@ export async function countUserMonthlyBenchmarks(pool: Pool | null, userId: stri
     const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
     const url = `${config.url}/rest/v1/comparisons?select=id&user_id=eq.${encodeURIComponent(userId)}&created_at=gte.${encodeURIComponent(firstOfMonth)}`;
     console.error('[credits] REST count URL:', url.replace(config.key, '***'));
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
     const res = await fetch(url, {
       headers: {
         apikey: config.key,
@@ -42,7 +44,9 @@ export async function countUserMonthlyBenchmarks(pool: Pool | null, userId: stri
         'Range-Unit': 'items',
       },
       cache: 'no-store',
+      signal: controller.signal,
     });
+    clearTimeout(timeout);
     if (!res.ok) {
       console.error('[credits] REST count failed:', res.status, await res.text().catch(() => ''));
       return 0;

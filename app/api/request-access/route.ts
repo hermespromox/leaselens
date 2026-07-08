@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
           </p>
         </div>
       `,
-      reply_to: normalizedEmail,
+      replyTo: normalizedEmail,
     });
 
     return NextResponse.json({ ok: true });

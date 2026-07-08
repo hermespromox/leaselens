@@ -32,23 +32,41 @@ export async function POST(req: NextRequest) {
       (u: any) => u.email?.toLowerCase() === normalizedEmail
     );
 
-    // Generate signup link (this also creates the user if they don't exist)
-    const generatedPassword = crypto.randomUUID();
-    const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
-      type: 'signup',
-      email: normalizedEmail,
-      password: generatedPassword,
-      options: {
-        redirectTo: `${SITE_URL}/auth/callback?next=/account`,
-      },
-    });
+    let actionLink: string | null = null;
 
-    if (linkError) {
-      console.error('[request-access] generateLink failed:', linkError);
-      return NextResponse.json(
-        { error: 'Failed to generate access link. Please try again.' },
-        { status: 500 }
-      );
+    if (alreadyExists) {
+      // User exists — send a password reset / magic link instead
+      const { data: recoveryData, error: recoveryError } = await supabase.auth.admin.generateLink({
+        type: 'recovery',
+        email: normalizedEmail,
+      });
+      if (recoveryError) {
+        console.error('[request-access] recovery link failed:', recoveryError);
+        return NextResponse.json(
+          { error: 'Failed to generate access link. Please try again.' },
+          { status: 500 }
+        );
+      }
+      actionLink = recoveryData.properties?.action_link || null;
+    } else {
+      // New user — create with signup link
+      const generatedPassword = crypto.randomUUID();
+      const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
+        type: 'signup',
+        email: normalizedEmail,
+        password: generatedPassword,
+        options: {
+          redirectTo: `${SITE_URL}/auth/callback?next=/account`,
+        },
+      });
+      if (linkError) {
+        console.error('[request-access] signup link failed:', linkError);
+        return NextResponse.json(
+          { error: 'Failed to generate access link. Please try again.' },
+          { status: 500 }
+        );
+      }
+      actionLink = linkData.properties?.action_link || null;
     }
 
     // Send confirmation email to the user + notify admin via Resend
@@ -66,14 +84,14 @@ export async function POST(req: NextRequest) {
             <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
               <h2>Welcome to AskLizy 🏠</h2>
               <p>Click below to activate your full access:</p>
-              <a href="${linkData.properties?.action_link || ''}"
+              <a href="${actionLink || ''}"
                  style="display: inline-block; padding: 12px 24px; background: #1a1a1a; color: #fff;
                         text-decoration: none; border-radius: 8px; font-weight: 600;">
                 Activate my account
               </a>
               <p style="margin-top: 24px; color: #6b7280; font-size: 13px;">
                 Or copy this link:<br/>
-                <code>${linkData.properties?.action_link || ''}</code>
+                <code>${actionLink || ''}</code>
               </p>
               <p style="color: #9ca3af; font-size: 12px; margin-top: 32px;">
                 AskLizy — AI location intelligence for lease decisions.
@@ -101,7 +119,7 @@ export async function POST(req: NextRequest) {
                 <tr><td style="padding: 6px 0; color: #6b7280;">Time</td><td>${new Date().toISOString()}</td></tr>
               </table>
               <p style="margin-top: 16px; color: #6b7280; font-size: 13px;">
-                User was sent a signup link. ${alreadyExists ? 'They already had an account — the link will confirm their email.' : 'New user — they need to confirm email before logging in.'}
+                User was sent an access link. ${alreadyExists ? 'They already had an account — a password reset link was sent.' : 'New user — they need to confirm email before logging in.'}
               </p>
             </div>
           `,

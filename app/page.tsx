@@ -219,7 +219,7 @@ function CreditsBanner({ session }: { session: SessionState | null }) {
       <div className="credits-banner">
         <div>
           <strong>Guest benchmark</strong>
-          <span>1 free try in this browser. Create a free account for 5 benchmarks/month.</span>
+          <span>3 free tries in this browser. Create a free account for 5 benchmarks/month.</span>
         </div>
         <a href="/signup">Create account</a>
       </div>
@@ -278,6 +278,10 @@ export default function Home() {
   const [error, setError] = useState('');
   const [locked, setLocked] = useState(false);
   const [lockedMessage, setLockedMessage] = useState('');
+  const [requestEmail, setRequestEmail] = useState('');
+  const [requestingAccess, setRequestingAccess] = useState(false);
+  const [accessSent, setAccessSent] = useState(false);
+  const [accessError, setAccessError] = useState('');
   const [session, setSession] = useState<SessionState | null>(null);
 
   useEffect(() => {
@@ -302,6 +306,27 @@ export default function Home() {
 
   const isLoggedIn = Boolean(session?.loggedIn && session?.confirmed);
   const winnerAddress = getWinnerAddress(result);
+
+  async function handleRequestAccess(e: React.FormEvent) {
+    e.preventDefault();
+    if (!requestEmail.trim()) return;
+    setRequestingAccess(true);
+    setAccessError('');
+    try {
+      const res = await fetch('/api/request-access', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: requestEmail.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || 'Request failed');
+      setAccessSent(true);
+    } catch (err) {
+      setAccessError(err instanceof Error ? err.message : 'Something went wrong');
+    } finally {
+      setRequestingAccess(false);
+    }
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -377,13 +402,34 @@ export default function Home() {
                     <a className="secondary-link" href="/account">My account</a>
                   </div>
                 </>
-              ) : (
+              ) : accessSent ? (
                 <>
-                  <p className="notice">Create a free account to get 5 benchmarks per month, or choose a paid plan for more.</p>
+                  <p className="notice">✅ Request sent! Check your inbox — we&rsquo;ll get you set up with full access shortly.</p>
                   <div className="hero-actions" style={{ marginTop: 16 }}>
-                    <a className="primary-link" href="/signup">Create free account</a>
                     <a className="secondary-link" href="/login">Log in</a>
                   </div>
+                </>
+              ) : (
+                <>
+                  <p className="notice">Enter your email to unlock full access. We&rsquo;ll send you a confirmation link.</p>
+                  <form onSubmit={handleRequestAccess} style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 12, width: '100%', maxWidth: 320 }}>
+                    <input
+                      type="email"
+                      value={requestEmail}
+                      onChange={e => setRequestEmail(e.target.value)}
+                      placeholder="you@example.com"
+                      required
+                      disabled={requestingAccess}
+                      style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #d1d5db', fontSize: 14, width: '100%' }}
+                    />
+                    {accessError && <p style={{ color: '#dc2626', fontSize: 13, margin: 0 }}>{accessError}</p>}
+                    <button type="submit" className="primary" disabled={requestingAccess} style={{ width: '100%' }}>
+                      {requestingAccess ? 'Sending…' : 'Get full access'}
+                    </button>
+                  </form>
+                  <p className="notice" style={{ marginTop: 12 }}>
+                    Already have an account? <a href="/login" style={{ textDecoration: 'underline' }}>Log in</a>
+                  </p>
                 </>
               )}
             </div>

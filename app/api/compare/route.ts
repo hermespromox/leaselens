@@ -69,7 +69,7 @@ const MAPS_NEARBY_ZOOM = 15;
 const ACTIVE_PLACE_DISTANCE_LIMIT_METERS = 1000;
 const AREA_VISITORS_ROUNDING_STEP = 500;
 const DEFAULT_CATEGORY = 'restaurant';
-const ANON_BENCHMARK_LIMIT = 1;
+const ANON_BENCHMARK_LIMIT = 3;
 const ANON_COOKIE_NAME = 'asklizy_anon';
 const ANON_COOKIE_SECRET = process.env.ANON_COOKIE_SECRET || 'asklizy-anon-signing-key-2024';
 
@@ -655,7 +655,7 @@ export async function POST(req: NextRequest) {
 
       if (anonCount >= ANON_BENCHMARK_LIMIT) {
         return NextResponse.json({
-          error: 'You have used your free benchmark. Create an account to get 5 benchmarks per month.',
+          error: 'You have used your 3 free benchmarks. Enter your email below to get full access.',
           locked: true,
           limit: ANON_BENCHMARK_LIMIT,
         }, { status: 403 });

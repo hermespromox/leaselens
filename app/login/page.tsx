@@ -3,7 +3,8 @@ import { redirect } from 'next/navigation';
 import { loginAction } from '@/app/auth/actions';
 import { getCurrentConfirmedUser } from '@/lib/supabase/server';
 
-export default async function LoginPage({ searchParams }: { searchParams: { error?: string; message?: string } }) {
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string; message?: string }> }) {
+  const params = await searchParams;
   const user = await getCurrentConfirmedUser();
   if (user) redirect('/account');
 
@@ -14,8 +15,8 @@ export default async function LoginPage({ searchParams }: { searchParams: { erro
         <p className="kicker">Welcome back</p>
         <h1>Log in</h1>
         <p className="subtle">Access your saved location benchmarks and continue your lease analysis workflow.</p>
-        {searchParams.message && <div className="success">{searchParams.message}</div>}
-        {searchParams.error && <div className="error">{searchParams.error}</div>}
+        {params.message && <div className="success">{params.message}</div>}
+        {params.error && <div className="error">{params.error}</div>}
         <form className="form" action={loginAction}>
           <label>Email<input name="email" type="email" autoComplete="email" required /></label>
           <label>Password<input name="password" type="password" autoComplete="current-password" required /></label>

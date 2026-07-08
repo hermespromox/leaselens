@@ -15,11 +15,12 @@ function roundUpToNearest(value: number, step: number) {
   return Math.ceil(value / step) * step;
 }
 
-export default async function HistoryDetailPage({ params }: { params: { id: string } }) {
+export default async function HistoryDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = await params;
   const user = await getCurrentConfirmedUser();
   if (!user) redirect('/login?message=Log in to view this comparison.');
 
-  const detail = await getComparisonDetail(user.id, params.id);
+  const detail = await getComparisonDetail(user.id, resolvedParams.id);
   if (!detail) notFound();
 
   const { comparison, locations, reviews } = detail;

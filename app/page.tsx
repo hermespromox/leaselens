@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import NavBar from '@/components/NavBar';
 
 type Place = {
@@ -26,6 +27,22 @@ type Side = {
   recentComments: { place: string; rating?: number; date?: string; text: string; distanceMeters?: number }[];
 };
 
+type Credits = {
+  plan?: string;
+  limit: number | null;
+  used: number;
+  remaining: number | null;
+  unlimited: boolean;
+};
+
+type SessionState = {
+  loggedIn: boolean;
+  confirmed: boolean;
+  email?: string;
+  plan?: string;
+  credits?: Credits | null;
+};
+
 type Result = {
   winner: 'A' | 'B' | 'Tie';
   summary: string;
@@ -35,6 +52,7 @@ type Result = {
   maxResults: number;
   sides: { A: Side; B: Side };
   storage?: { saved: boolean; id: string | number | null; provider: string | null };
+  credits?: Credits | null;
 };
 
 function Metric({ label, value, suffix = '' }: { label: string; value: number | string; suffix?: string }) {
@@ -160,7 +178,7 @@ const methodSteps = [
 ];
 
 const tiers = [
-  { name: 'Free', original: '', price: '€0', period: '/mo', desc: 'Try it out', items: ['10 benchmarks / month', 'Active POI density', 'Area visitors/day', 'Report view'], popular: false },
+  { name: 'Free', original: '', price: '€0', period: '/mo', desc: 'Try it out', items: ['5 benchmarks / month', 'Active POI density', 'Area visitors/day', 'Report view'], popular: false },
   { name: 'Starter', original: '', price: '€99', period: '/mo HT', desc: 'One-off location checks', items: ['500 benchmarks / month', 'Active POI density', 'Area visitors/day', 'Report view'], popular: false },
   { name: 'Pro', original: '', price: '€149', period: '/mo HT', desc: 'For brokers and operators', items: ['1,500 benchmarks / month', 'Up to 500 POIs/search', 'Recent comments', 'Saved history'], popular: true },
   { name: 'Studio', original: '', price: 'Custom', period: '', desc: 'For teams and APIs', items: ['Team workspace', 'Bulk address lists', 'White-label reports', 'Custom data providers'], popular: false },
@@ -182,6 +200,72 @@ const businessCategories = [
   { label: 'Coworking', value: 'coworking space' },
 ];
 
+function planLabel(plan?: string) {
+  if (!plan) return 'Free';
+  return plan.charAt(0).toUpperCase() + plan.slice(1);
+}
+
+function CreditsBanner({ session }: { session: SessionState | null }) {
+  if (session === null) {
+    return (
+      <div className="credits-banner credits-loading" aria-live="polite">
+        <span>Checking credits…</span>
+      </div>
+    );
+  }
+
+  if (!session.loggedIn || !session.confirmed) {
+    return (
+      <div className="credits-banner">
+        <div>
+          <strong>Guest benchmark</strong>
+          <span>1 free try in this browser. Create a free account for 5 benchmarks/month.</span>
+        </div>
+        <a href="/signup">Create account</a>
+      </div>
+    );
+  }
+
+  const credits = session.credits;
+  if (!credits) {
+    return (
+      <div className="credits-banner">
+        <div>
+          <strong>{planLabel(session.plan)} plan</strong>
+          <span>Credits are being refreshed.</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (credits.unlimited) {
+    return (
+      <div className="credits-banner credits-ok">
+        <div>
+          <strong>Unlimited benchmarks</strong>
+          <span>{planLabel(credits.plan || session.plan)} plan · saved history enabled</span>
+        </div>
+        <Link href="/history">History</Link>
+      </div>
+    );
+  }
+
+  const remaining = credits.remaining ?? 0;
+  const limit = credits.limit ?? 0;
+  const pct = limit ? Math.max(0, Math.min(100, (remaining / limit) * 100)) : 0;
+
+  return (
+    <div className={`credits-banner ${remaining === 0 ? 'credits-empty' : remaining <= 2 ? 'credits-low' : 'credits-ok'}`}>
+      <div>
+        <strong>{remaining} / {limit} benchmarks left</strong>
+        <span>{planLabel(credits.plan || session.plan)} plan · {credits.used} used this month · resets monthly</span>
+        <i className="credits-meter"><b style={{ width: `${pct}%` }} /></i>
+      </div>
+      {remaining === 0 ? <a href="#pricing">Upgrade</a> : <Link href="/history">History</Link>}
+    </div>
+  );
+}
+
 export default function Home() {
   const [form, setForm] = useState({
     placeA: '30 rue Myrha, 75018 Paris',
@@ -194,13 +278,29 @@ export default function Home() {
   const [error, setError] = useState('');
   const [locked, setLocked] = useState(false);
   const [lockedMessage, setLockedMessage] = useState('');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [session, setSession] = useState<SessionState | null>(null);
 
   useEffect(() => {
-    fetch('/api/session').then(r => r.json()).then(data => {
-      setIsLoggedIn(Boolean(data?.loggedIn && data?.confirmed));
-    }).catch(() => {});
+    let cancelled = false;
+    async function loadSession() {
+      try {
+        const res = await fetch('/api/session', { cache: 'no-store' });
+        const data = res.ok ? await res.json() : null;
+        if (!cancelled) setSession(data || { loggedIn: false, confirmed: false, plan: 'free', credits: null });
+      } catch {
+        if (!cancelled) setSession({ loggedIn: false, confirmed: false, plan: 'free', credits: null });
+      }
+    }
+    loadSession();
+    const handleRefresh = () => loadSession();
+    window.addEventListener('asklizy:session-refresh', handleRefresh);
+    return () => {
+      cancelled = true;
+      window.removeEventListener('asklizy:session-refresh', handleRefresh);
+    };
   }, []);
+
+  const isLoggedIn = Boolean(session?.loggedIn && session?.confirmed);
   const winnerAddress = getWinnerAddress(result);
 
   async function submit(e: React.FormEvent) {
@@ -230,6 +330,16 @@ export default function Home() {
         throw new Error(data?.error || 'Benchmark failed');
       }
       setResult(data);
+      if (data?.credits) {
+        setSession((prev) => ({
+          ...(prev || { loggedIn: true, confirmed: true }),
+          loggedIn: true,
+          confirmed: true,
+          plan: data.credits.plan || prev?.plan || 'free',
+          credits: data.credits,
+        }));
+      }
+      window.dispatchEvent(new Event('asklizy:session-refresh'));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unexpected error');
     } finally {
@@ -293,6 +403,7 @@ export default function Home() {
               </select>
             </label>
             <p className="notice">Search area is fixed at 800m for consistent, apples-to-apples benchmarks.</p>
+            <CreditsBanner session={session} />
             <button className="primary" disabled={loading}>{loading ? 'Scanning Maps data…' : 'Benchmark locations'}</button>
             {loading && (
               <div className="charge-loader" role="status" aria-live="polite">
@@ -341,11 +452,24 @@ export default function Home() {
               <p className="notice save-notice">
                 {result.storage?.saved
                   ? 'This benchmark is saved to your history.'
-                  : 'Create an account or log in to save benchmarks to your history.'}
+                  : isLoggedIn
+                    ? 'Benchmark complete, but it was not saved. Try again or contact support if this repeats.'
+                    : 'Create an account or log in to save benchmarks to your history.'}
               </p>
               <div className="hero-actions compact-actions">
-                <a className="secondary-link" href="/history">Open history</a>
-                <a className="secondary-link" href="/signup">Create account</a>
+                {result.storage?.saved && result.storage.id ? (
+                  <>
+                    <Link className="primary-link" href={`/history/${result.storage.id}`}>Open saved report</Link>
+                    <Link className="secondary-link" href="/history">All history</Link>
+                  </>
+                ) : isLoggedIn ? (
+                  <Link className="secondary-link" href="/history">Open history</Link>
+                ) : (
+                  <>
+                    <a className="primary-link" href="/signup">Create free account</a>
+                    <a className="secondary-link" href="/login">Log in</a>
+                  </>
+                )}
               </div>
             </div>
             <div className="columns"><SideCard side={result.sides.A} /><SideCard side={result.sides.B} /></div>
@@ -455,7 +579,7 @@ export default function Home() {
             <span>Product</span>
             <a href="#product">Features</a>
             <a href="#pricing">Pricing</a>
-            <a href="/history">History</a>
+            <Link href="/history">History</Link>
           </div>
           <div className="footer-col">
             <span>Account</span>

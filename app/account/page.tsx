@@ -39,7 +39,8 @@ function statusLabel(status: string | null) {
   return labels[status || ''] || status || '—'
 }
 
-export default async function AccountPage({ searchParams }: { searchParams: { error?: string; message?: string } }) {
+export default async function AccountPage({ searchParams }: { searchParams: Promise<{ error?: string; message?: string }> }) {
+  const params = await searchParams;
   const user = await getCurrentConfirmedUser()
   if (!user) redirect('/login?message=Confirm your email, then log in to access your workspace.')
 
@@ -59,7 +60,7 @@ export default async function AccountPage({ searchParams }: { searchParams: { er
   if (isUnlimited) {
     credits = { limit: null, used: 0, remaining: null, unlimited: true }
   } else {
-    const limit = planConfig?.maxComparisons ?? 5
+    const limit = planConfig?.maxComparisons ?? PLANS.free.maxComparisons
     const used = await countUserMonthlyBenchmarks(pool, user.id)
     credits = { limit, used, remaining: Math.max(0, limit - used), unlimited: false }
   }
@@ -83,8 +84,8 @@ export default async function AccountPage({ searchParams }: { searchParams: { er
           <Link className="primary-link" href="/#compare">New comparison</Link>
         </div>
 
-        {searchParams.message && <div className="success">{searchParams.message}</div>}
-        {searchParams.error && <div className="error">{searchParams.error}</div>}
+        {params.message && <div className="success">{params.message}</div>}
+        {params.error && <div className="error">{params.error}</div>}
 
         {/* Profile card */}
         <div className="panel account-profile-card" style={{ marginBottom: 24 }}>

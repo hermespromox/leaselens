@@ -2,7 +2,7 @@ import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
 
 export const PLANS = {
-  free: { id: 'free', label: 'Free', price: 0, maxComparisons: 10, canExport: false },
+  free: { id: 'free', label: 'Free', price: 0, maxComparisons: 5, canExport: false },
   starter: { id: 'starter', label: 'Starter', price: 99, maxComparisons: 500, canExport: false },
   pro: { id: 'pro', label: 'Pro', price: 149, maxComparisons: 1500, canExport: true },
   staff: { id: 'staff', label: 'Staff', price: 0, maxComparisons: null, canExport: true },

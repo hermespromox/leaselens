@@ -3,7 +3,8 @@ import { redirect } from 'next/navigation';
 import { updatePasswordAction } from '@/app/auth/actions';
 import { getCurrentUser } from '@/lib/supabase/server';
 
-export default async function UpdatePasswordPage({ searchParams }: { searchParams: { error?: string; message?: string } }) {
+export default async function UpdatePasswordPage({ searchParams }: { searchParams: Promise<{ error?: string; message?: string }> }) {
+  const params = await searchParams;
   const user = await getCurrentUser();
   if (!user) redirect('/login?message=Please log in from your reset link to update your password.');
 
@@ -13,8 +14,8 @@ export default async function UpdatePasswordPage({ searchParams }: { searchParam
       <section className="panel auth-card">
         <p className="kicker">Security</p>
         <h1>Update password</h1>
-        {searchParams.message && <div className="success">{searchParams.message}</div>}
-        {searchParams.error && <div className="error">{searchParams.error}</div>}
+        {params.message && <div className="success">{params.message}</div>}
+        {params.error && <div className="error">{params.error}</div>}
         <form className="form" action={updatePasswordAction}>
           <label>New password<input name="password" type="password" autoComplete="new-password" minLength={8} required /></label>
           <label>Confirm new password<input name="confirmPassword" type="password" autoComplete="new-password" minLength={8} required /></label>

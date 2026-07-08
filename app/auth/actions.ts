@@ -21,7 +21,7 @@ export async function signUpAction(formData: FormData) {
   if (password.length < 8) redirectWithMessage('/signup', 'error', 'Password must be at least 8 characters.');
   if (password !== confirmPassword) redirectWithMessage('/signup', 'error', 'Passwords do not match.');
 
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -61,7 +61,7 @@ export async function loginAction(formData: FormData) {
 
   if (!email || !password) redirectWithMessage('/login', 'error', 'Email and password are required.');
 
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) redirectWithMessage('/login', 'error', 'Invalid email or password.');
   if (!data.user?.email_confirmed_at) {
@@ -76,7 +76,7 @@ export async function loginAction(formData: FormData) {
 }
 
 export async function logoutAction() {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   await supabase.auth.signOut();
   revalidatePath('/', 'layout');
   redirect('/?loggedout=1');
@@ -86,7 +86,7 @@ export async function resetPasswordAction(formData: FormData) {
   const email = String(formData.get('email') || '').trim();
   if (!email) redirectWithMessage('/reset-password', 'error', 'Email is required.');
 
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${origin()}/auth/callback?next=/update-password`,
   });
@@ -102,7 +102,7 @@ export async function updatePasswordAction(formData: FormData) {
   if (password.length < 8) redirectWithMessage('/update-password', 'error', 'Password must be at least 8 characters.');
   if (password !== confirmPassword) redirectWithMessage('/update-password', 'error', 'Passwords do not match.');
 
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.updateUser({ password });
   if (error) redirectWithMessage('/update-password', 'error', error.message);
 

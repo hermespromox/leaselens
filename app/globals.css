@@ -58,9 +58,10 @@ button:focus-visible, a:focus-visible { outline-offset: 2px; }
 .nav-account-icon { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; font-size: 22px; line-height: 1; color: var(--accent-dark); flex: 0 0 auto; }
 .nav-toggle { display: none; border: 1px solid var(--line); background: #fff; border-radius: 12px; width: 40px; height: 40px; align-items: center; justify-content: center; cursor: pointer; }
 .nav-sheet { position: absolute; top: 100%; left: 0; right: 0; margin: 8px 18px 0; background: var(--paper); border: 1px solid var(--line); border-radius: 20px; box-shadow: var(--shadow); padding: 10px; display: grid; gap: 2px; z-index: 20; }
-.nav-sheet a, .nav-sheet-loading { padding: 12px 14px; border-radius: 14px; color: var(--ink); font-weight: 650; font-size: 15px; }
+.nav-sheet a, .nav-sheet button, .nav-sheet-loading { padding: 12px 14px; border-radius: 14px; color: var(--ink); font-weight: 650; font-size: 15px; }
+.nav-sheet button { border: 0; background: transparent; text-align: left; cursor: pointer; font: inherit; }
 .nav-sheet-loading { color: var(--muted); }
-.nav-sheet a:hover { background: var(--soft); }
+.nav-sheet a:hover, .nav-sheet button:hover { background: var(--soft); }
 .brand { font-weight: 900; letter-spacing: -0.04em; font-size: 22px; display: inline-flex; align-items: center; gap: 8px; }
 .logo-icon { font-size: 28px; color: var(--accent-dark); line-height: 1; }
 .hero { display: grid; grid-template-columns: 1.02fr .78fr; gap: 30px; align-items: center; padding: 52px 0 30px; }
@@ -105,6 +106,26 @@ input, select {
 input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(255,107,53,.12); }
 .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .notice { color: var(--muted); font-size: 12px; line-height: 1.45; margin-bottom: 0; }
+.credits-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid rgba(255,107,53,.22);
+  background: linear-gradient(135deg, rgba(255,107,53,.08), #fff);
+  border-radius: 18px;
+  padding: 12px;
+}
+.credits-banner div { display: grid; gap: 4px; min-width: 0; flex: 1; }
+.credits-banner strong { font-size: 13px; letter-spacing: -0.01em; }
+.credits-banner span { color: var(--muted); font-size: 11px; line-height: 1.35; }
+.credits-banner a { flex: 0 0 auto; border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 7px 10px; font-size: 11px; font-weight: 850; color: var(--ink); }
+.credits-ok { border-color: rgba(8,127,91,.22); background: linear-gradient(135deg, rgba(8,127,91,.08), #fff); }
+.credits-low { border-color: rgba(245,158,11,.32); background: linear-gradient(135deg, rgba(245,158,11,.10), #fff); }
+.credits-empty { border-color: rgba(220,38,38,.28); background: linear-gradient(135deg, rgba(220,38,38,.08), #fff); }
+.credits-loading { color: var(--muted); background: linear-gradient(90deg, #fff, var(--soft), #fff); background-size: 220% 100%; animation: navPulse 1.2s ease-in-out infinite; }
+.credits-meter { display: block; height: 5px; border-radius: 999px; background: #e8e1d7; overflow: hidden; margin-top: 2px; }
+.credits-meter b { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--accent-dark), var(--accent)); transition: width .25s ease; }
 .charge-loader {
   display: grid;
   gap: 10px;

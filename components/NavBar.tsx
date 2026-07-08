@@ -1,8 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useCallback, useEffect, useState, useRef } from 'react';
 
 type SessionState = { loggedIn: boolean; confirmed: boolean; email?: string; plan?: string; credits?: { limit: number | null; used: number; remaining: number | null; unlimited: boolean } | null };
 
@@ -38,19 +37,24 @@ export default function NavBar({ active, variant = 'marketing' }: { active?: 'co
   const [session, setSession] = useState<SessionState | null>(null);
   const [loggingOut, setLoggingOut] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const router = useRouter();
   const isLoadingSession = session === null;
 
-  useEffect(() => {
-    let cancelled = false;
-    fetch('/api/session', { cache: 'no-store' })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (!cancelled && data) setSession(data);
-      })
-      .catch(() => {});
-    return () => { cancelled = true; };
+  const refreshSession = useCallback(async () => {
+    try {
+      const res = await fetch('/api/session', { cache: 'no-store' });
+      const data = res.ok ? await res.json() : null;
+      setSession(data || { loggedIn: false, confirmed: false, plan: 'free', credits: null });
+    } catch {
+      setSession({ loggedIn: false, confirmed: false, plan: 'free', credits: null });
+    }
   }, []);
+
+  useEffect(() => {
+    refreshSession();
+    const handleRefresh = () => refreshSession();
+    window.addEventListener('asklizy:session-refresh', handleRefresh);
+    return () => window.removeEventListener('asklizy:session-refresh', handleRefresh);
+  }, [refreshSession]);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -71,8 +75,8 @@ export default function NavBar({ active, variant = 'marketing' }: { active?: 'co
   ];
   const contextLinks = variant === 'marketing' ? marketingLinks : [];
 
-  async function handleSignOut(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleSignOut(e?: React.FormEvent | React.MouseEvent) {
+    e?.preventDefault();
     setLoggingOut(true);
     try {
       await fetch('/api/auth/signout', { method: 'POST' });
@@ -97,7 +101,7 @@ export default function NavBar({ active, variant = 'marketing' }: { active?: 'co
             <Link href="/#compare" className={active === 'compare' ? 'nav-active' : undefined}>Compare</Link>
           )}
           <Link href="/history" className={active === 'history' ? 'nav-active' : undefined}>History</Link>
-          {variant === 'marketing' && <a href="/#legal">Legal</a>}
+          {variant === 'marketing' && <Link href="/#legal">Legal</Link>}
 
           {isLoadingSession ? (
             <span className="nav-auth-loading" aria-label="Checking session…" aria-live="polite" />
@@ -251,12 +255,19 @@ export default function NavBar({ active, variant = 'marketing' }: { active?: 'co
                   <PlanBadge plan={plan} />
                 </div>
                 <Link href="/account" onClick={() => setMobileOpen(false)}>My account · {session?.email}</Link>
-                <Link href="/login" onClick={() => setMobileOpen(false)} style={{ color: '#dc2626' }}>Log out</Link>
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  disabled={loggingOut}
+                  style={{ color: '#dc2626' }}
+                >
+                  {loggingOut ? 'Signing out…' : 'Log out'}
+                </button>
               </>
             ) : (
               <Link href="/login" onClick={() => setMobileOpen(false)}>Log in</Link>
             )}
-            {variant === 'marketing' && <a href="/#legal" onClick={() => setMobileOpen(false)}>Legal</a>}
+            {variant === 'marketing' && <Link href="/#legal" onClick={() => setMobileOpen(false)}>Legal</Link>}
           </div>
         )}
       </div>

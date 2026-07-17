@@ -33,12 +33,13 @@ export default async function HistoryDetailPage({ params }: { params: Promise<{ 
         <div className="panel winner-panel detail-hero">
           <p className="kicker">Saved comparison · {new Date(comparison.created_at).toLocaleString()}</p>
           <h1>{comparison.place_a} vs {comparison.place_b}</h1>
+          <p className="kicker winner-kicker">Analysis summary</p>
+          <h2>Recommended location: <span>{comparison.winner}</span></h2>
+          <p>{comparison.summary}</p>
           <div className="scoreboard">
             <div className="score-card"><span>Place A score</span><strong>{comparison.score_a ?? '—'}</strong></div>
             <div className="score-card"><span>Place B score</span><strong>{comparison.score_b ?? '—'}</strong></div>
           </div>
-          <h2>Winner: <span>{comparison.winner}</span></h2>
-          <p>{comparison.summary}</p>
         </div>
 
         <div className="columns">

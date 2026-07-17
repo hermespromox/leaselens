@@ -5,6 +5,7 @@ const read = (path) => fs.readFileSync(new URL(`../${path}`, import.meta.url), '
 
 const billing = read('lib/billing.ts');
 const home = read('app/page.tsx');
+const historyDetail = read('app/history/[id]/page.tsx');
 const nav = read('components/NavBar.tsx');
 const account = read('app/account/page.tsx');
 const callback = read('app/auth/callback/route.ts');
@@ -30,6 +31,17 @@ assert.doesNotMatch(
 assert.match(nav, /\/api\/auth\/signout/, 'Navbar logout must call the signout API.');
 
 assert.match(home, /history\/\$\{result\.storage\.id\}/, 'Saved results should link directly to the saved history detail.');
+
+const liveSummaryPosition = home.indexOf('Analysis summary');
+const liveScoreboardPosition = home.indexOf('<div className="scoreboard">', liveSummaryPosition);
+assert.ok(liveSummaryPosition >= 0, 'Live analysis must start with an explicitly labeled summary.');
+assert.ok(liveScoreboardPosition > liveSummaryPosition, 'Live analysis summary must appear before the score breakdown.');
+
+const savedSummaryPosition = historyDetail.indexOf('Analysis summary');
+const savedScoreboardPosition = historyDetail.indexOf('<div className="scoreboard">', savedSummaryPosition);
+assert.ok(savedSummaryPosition >= 0, 'Saved analysis must start with an explicitly labeled summary.');
+assert.ok(savedScoreboardPosition > savedSummaryPosition, 'Saved analysis summary must appear before the score breakdown.');
+
 assert.doesNotMatch(account, /\?\?\s*5\b/, 'Account credits must use PLANS as source of truth, not standalone fallback limits.');
 
 assert.match(callback, /response\.cookies\.set/s, 'Auth callback must set Supabase cookies on the redirect response object.');

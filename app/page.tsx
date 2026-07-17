@@ -488,13 +488,13 @@ export default function Home() {
         {result && (
           <>
             <div className="panel winner-panel">
+              <p className="kicker winner-kicker">Analysis summary</p>
+              <h2>Recommended location: {winnerAddress}</h2>
+              <p>{result.summary}</p>
               <div className="scoreboard">
                 <ScoreCard side={result.sides.A} />
                 <ScoreCard side={result.sides.B} />
               </div>
-              <p className="kicker winner-kicker">Recommended location</p>
-              <h2>{winnerAddress}</h2>
-              <p>{result.summary}</p>
               <p className="notice save-notice">
                 {result.storage?.saved
                   ? 'This benchmark is saved to your history.'
